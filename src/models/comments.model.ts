@@ -13,7 +13,7 @@ import { Post } from './post.model';
 @Table({ tableName: 'comments', timestamps: true })
 export class Comment extends AbstractModel {
   @Column({ type: DataType.TEXT, allowNull: false })
-  message: string;
+  content: string;
 
   @ForeignKey(() => User)
   @Column({ type: DataType.UUID, allowNull: false })
