@@ -8,6 +8,7 @@ import { TransformInterceptor } from './commons/interceptors/transform.intercept
 import { PostsModule } from './posts/posts.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { CommentsModule } from './comments/comments.module';
+import { RolesGuard } from './auth/guards/roles.guard';
 
 @Module({
   imports: [
@@ -27,6 +28,10 @@ import { CommentsModule } from './comments/comments.module';
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
     },
   ],
 })

@@ -7,6 +7,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { PostsService } from './posts.service';
 import { ResponseMessage } from 'src/commons/decorators/response-message.decorator';
@@ -15,11 +16,15 @@ import { CurrentUser } from 'src/commons/decorators/current-user.decorator';
 import { User } from 'src/models/user.model';
 import { PublicApi } from 'src/commons/decorators/public-api.decorator';
 import { UpdatePostDto } from './dtos/update-post.dto';
+import { QueryParamsDto } from 'src/commons/dtos/query-params.dto';
+import { Roles } from 'src/commons/decorators/roles.decorator';
+import { UserRole } from 'src/commons/types/user.type';
 
 @Controller('posts')
 export class PostsController {
   constructor(private readonly postsService: PostsService) {}
 
+  @Roles(UserRole.ADMIN)
   @ResponseMessage('Create post success')
   @Post('')
   async create(
@@ -30,10 +35,10 @@ export class PostsController {
   }
 
   @PublicApi()
-  @ResponseMessage('Get all posts success')
+  @ResponseMessage('Get posts success')
   @Get('')
-  async findAll() {
-    return await this.postsService.findAll();
+  async findAll(@Query() queryParamsDto: QueryParamsDto) {
+    return await this.postsService.findAll(queryParamsDto);
   }
 
   @PublicApi()
@@ -43,6 +48,7 @@ export class PostsController {
     return await this.postsService.findOne(id);
   }
 
+  @Roles(UserRole.ADMIN)
   @ResponseMessage('Update post success')
   @Patch(':id')
   async update(
@@ -53,6 +59,7 @@ export class PostsController {
     return await this.postsService.update(user, id, updatePostDto);
   }
 
+  @Roles(UserRole.ADMIN)
   @ResponseMessage('Delete post success')
   @Delete(':id')
   async delete(

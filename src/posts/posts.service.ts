@@ -10,6 +10,10 @@ import { User } from 'src/models/user.model';
 import { CreatePostDto } from './dtos/create-post.dto';
 import { UpdatePostDto } from './dtos/update-post.dto';
 import { handleError } from 'src/commons/utils/error.util';
+import { QueryParamsDto } from 'src/commons/dtos/query-params.dto';
+import { MetaData } from 'src/commons/types/common.type';
+import { Op, WhereOptions } from 'sequelize';
+import { QueryUtil } from 'src/commons/utils/query.util';
 
 @Injectable()
 export class PostsService {
@@ -30,8 +34,18 @@ export class PostsService {
     }
   }
 
-  async findAll() {
-    const posts = await this.postsRepository.findAll({
+  async findAll(queryParamsDto: QueryParamsDto) {
+    const { page, limit, search } = queryParamsDto;
+
+    const where: WhereOptions = {};
+    if (search) {
+      where.title = {
+        [Op.iLike]: `%${search}%`,
+      };
+    }
+
+    const { count, rows: data } = await this.postsRepository.findAndCountAll({
+      where,
       include: [
         {
           model: User,
@@ -39,8 +53,13 @@ export class PostsService {
         },
       ],
       order: [['createdAt', 'DESC']],
+      offset: QueryUtil.getOffset(page, limit),
+      limit: limit,
     });
-    return posts;
+
+    const meta: MetaData = QueryUtil.calculateMeta(page, limit, count);
+
+    return { meta, data };
   }
 
   async findOne(id: string) {
@@ -63,10 +82,7 @@ export class PostsService {
       const isAuthor = post.authorId === user.id;
       if (!isAuthor) throw new ForbiddenException('You are not the author');
 
-      await this.postsRepository.update(
-        { ...updatePostDto },
-        { where: { id } },
-      );
+      await this.postsRepository.update(updatePostDto, { where: { id } });
     } catch (error) {
       handleError(error, 'Post');
     }

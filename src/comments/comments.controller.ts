@@ -25,7 +25,7 @@ export class CommentsController {
     return await this.commentsService.create(user, createCommentDto);
   }
 
-  @ResponseMessage('Get all comments success')
+  @ResponseMessage('Get comments success')
   @Get('posts/:postId')
   async findAll(@Param('postId', ParseUUIDPipe) postId: string) {
     return await this.commentsService.findAll(postId);

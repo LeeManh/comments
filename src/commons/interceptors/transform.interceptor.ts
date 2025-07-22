@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { SuccessRes } from '../types/response.type';
+import { SuccessRes } from '../types/common.type';
 import { Reflector } from '@nestjs/core';
 import { RESPONSE_MESSAGE_KEY } from '../decorators/response-message.decorator';
 
@@ -38,8 +38,17 @@ export class TransformInterceptor<T>
           data: data,
         };
 
+        if (this.haveMetaData(data)) {
+          res.meta = data.meta;
+          res.data = data.data;
+        }
+
         return res;
       }),
     );
+  }
+
+  private haveMetaData(data: unknown) {
+    return data && typeof data === 'object' && 'meta' in data;
   }
 }
