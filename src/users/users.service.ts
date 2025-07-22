@@ -3,6 +3,7 @@ import { USER_REPOSITORY_TOKEN } from './users.provider';
 import { User } from 'src/models/user.model';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { hashPassword } from 'src/commons/utils/hash.util';
+import { handleError } from 'src/commons/utils/error.util';
 
 @Injectable()
 export class UsersService {
@@ -11,11 +12,15 @@ export class UsersService {
   ) {}
 
   async create(createUserDto: CreateUserDto) {
-    const user = await this.userRepository.create({
-      ...createUserDto,
-      password: await hashPassword(createUserDto.password),
-    });
-    return user;
+    try {
+      const user = await this.userRepository.create({
+        ...createUserDto,
+        password: await hashPassword(createUserDto.password),
+      });
+      return user;
+    } catch (error) {
+      handleError(error, 'User');
+    }
   }
 
   async findByEmail(email: string) {

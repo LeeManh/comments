@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
 } from '@nestjs/common';
@@ -38,14 +39,14 @@ export class PostsController {
   @PublicApi()
   @ResponseMessage('Get post detail success')
   @Get(':id')
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('id', ParseUUIDPipe) id: string) {
     return await this.postsService.findOne(id);
   }
 
   @ResponseMessage('Update post success')
   @Patch(':id')
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: User,
     @Body() updatePostDto: UpdatePostDto,
   ) {
@@ -54,7 +55,10 @@ export class PostsController {
 
   @ResponseMessage('Delete post success')
   @Delete(':id')
-  async delete(@Param('id') id: string, @CurrentUser() user: User) {
+  async delete(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: User,
+  ) {
     return await this.postsService.delete(user, id);
   }
 }

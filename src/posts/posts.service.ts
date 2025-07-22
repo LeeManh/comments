@@ -9,6 +9,7 @@ import { Post } from 'src/models/post.model';
 import { User } from 'src/models/user.model';
 import { CreatePostDto } from './dtos/create-post.dto';
 import { UpdatePostDto } from './dtos/update-post.dto';
+import { handleError } from 'src/commons/utils/error.util';
 
 @Injectable()
 export class PostsService {
@@ -18,11 +19,15 @@ export class PostsService {
   ) {}
 
   async create(user: User, createPostDto: CreatePostDto) {
-    const post = await this.postsRepository.create({
-      ...createPostDto,
-      authorId: user.id,
-    });
-    return post;
+    try {
+      const post = await this.postsRepository.create({
+        ...createPostDto,
+        authorId: user.id,
+      });
+      return post;
+    } catch (error) {
+      handleError(error, 'Post');
+    }
   }
 
   async findAll() {
@@ -39,8 +44,7 @@ export class PostsService {
   }
 
   async findOne(id: string) {
-    const post = await this.postsRepository.findOne({
-      where: { id },
+    const post = await this.postsRepository.findByPk(id, {
       include: [
         {
           model: User,
@@ -52,13 +56,20 @@ export class PostsService {
   }
 
   async update(user: User, id: string, updatePostDto: UpdatePostDto) {
-    const post = await this.findOne(id);
-    if (!post) throw new NotFoundException('Not found post');
+    try {
+      const post = await this.findOne(id);
+      if (!post) throw new NotFoundException('Not found post');
 
-    const isAuthor = post.authorId === user.id;
-    if (!isAuthor) throw new ForbiddenException('You are not the author');
+      const isAuthor = post.authorId === user.id;
+      if (!isAuthor) throw new ForbiddenException('You are not the author');
 
-    await this.postsRepository.update({ ...updatePostDto }, { where: { id } });
+      await this.postsRepository.update(
+        { ...updatePostDto },
+        { where: { id } },
+      );
+    } catch (error) {
+      handleError(error, 'Post');
+    }
   }
 
   async delete(user: User, id: string) {

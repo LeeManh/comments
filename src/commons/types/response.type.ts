@@ -5,3 +5,9 @@ export interface SuccessRes<T> {
   statusCode: HttpStatus;
   data: T;
 }
+
+export interface ErrorRes {
+  message: string;
+  statusCode: HttpStatus;
+  errors?: unknown;
+}

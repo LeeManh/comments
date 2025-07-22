@@ -1,4 +1,11 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+} from '@nestjs/common';
 import { CommentsService } from './comments.service';
 import { CurrentUser } from 'src/commons/decorators/current-user.decorator';
 import { CreateCommentDto } from './dtos/create-comment.dto';
@@ -20,7 +27,7 @@ export class CommentsController {
 
   @ResponseMessage('Get all comments success')
   @Get('posts/:postId')
-  async findAll(@Param('postId') postId: string) {
+  async findAll(@Param('postId', ParseUUIDPipe) postId: string) {
     return await this.commentsService.findAll(postId);
   }
 }
