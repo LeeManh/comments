@@ -4,7 +4,7 @@ import { TokenPayload } from 'src/commons/types/token.type';
 import { comparePassword } from 'src/commons/utils/hash.util';
 import { User } from 'src/models/user.model';
 import { UsersService } from 'src/users/users.service';
-import { RegisterUserDto } from './dto/register-user.dto';
+import { RegisterUserDto } from './dtos/register-user.dto';
 
 @Injectable()
 export class AuthService {

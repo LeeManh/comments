@@ -37,5 +37,5 @@ export class Comment extends AbstractModel {
   parent?: Comment;
 
   @HasMany(() => Comment, { foreignKey: 'parentId' })
-  children: Comment[];
+  replies: Comment[];
 }
