@@ -7,6 +7,7 @@ import { LocalStrategy } from './strategies/local.strategy';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { RefreshTokensModule } from 'src/refresh-tokens/refresh-tokens.module';
 
 @Module({
   imports: [
@@ -15,10 +16,11 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        secret: configService.get('JWT_SECRET'),
-        signOptions: { expiresIn: configService.get('JWT_EXPIRES_IN') },
+        secret: configService.getOrThrow('JWT_SECRET'),
+        signOptions: { expiresIn: configService.getOrThrow('JWT_EXPIRES_IN') },
       }),
     }),
+    RefreshTokensModule,
   ],
   providers: [AuthService, LocalStrategy, JwtStrategy],
   controllers: [AuthController],

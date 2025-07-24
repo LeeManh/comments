@@ -3,6 +3,7 @@ import { Post } from './post.model';
 import { AbstractModel } from './abstract.model';
 import { Comment } from './comments.model';
 import { UserRole } from 'src/commons/types/user.type';
+import { RefreshToken } from './refresh-token.model';
 
 @Table({ tableName: 'users', timestamps: true })
 export class User extends AbstractModel {
@@ -27,4 +28,7 @@ export class User extends AbstractModel {
 
   @HasMany(() => Comment, { foreignKey: 'userId' })
   comments: Comment[];
+
+  @HasMany(() => RefreshToken, { foreignKey: 'userId' })
+  refreshTokens: RefreshToken[];
 }

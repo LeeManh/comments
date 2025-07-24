@@ -1,13 +1,13 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { COMMENT_REPOSITORY_TOKEN } from './comments.providers';
+import { Injectable } from '@nestjs/common';
 import { Comment } from 'src/models/comments.model';
 import { CreateCommentDto } from './dtos/create-comment.dto';
 import { User } from 'src/models/user.model';
+import { InjectModel } from '@nestjs/sequelize';
 
 @Injectable()
 export class CommentsService {
   constructor(
-    @Inject(COMMENT_REPOSITORY_TOKEN)
+    @InjectModel(Comment)
     private readonly commentsRepository: typeof Comment,
   ) {}
 

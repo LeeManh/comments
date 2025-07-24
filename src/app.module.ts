@@ -9,6 +9,7 @@ import { PostsModule } from './posts/posts.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { CommentsModule } from './comments/comments.module';
 import { RolesGuard } from './auth/guards/roles.guard';
+import { RefreshTokensModule } from './refresh-tokens/refresh-tokens.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { RolesGuard } from './auth/guards/roles.guard';
     AuthModule,
     PostsModule,
     CommentsModule,
+    RefreshTokensModule,
   ],
   controllers: [],
   providers: [
