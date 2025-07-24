@@ -1,10 +1,8 @@
 import {
   ForbiddenException,
-  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { POST_REPOSITORY_TOKEN } from './posts.providers';
 import { Post } from 'src/models/post.model';
 import { User } from 'src/models/user.model';
 import { CreatePostDto } from './dtos/create-post.dto';
@@ -14,11 +12,12 @@ import { QueryParamsDto } from 'src/commons/dtos/query-params.dto';
 import { MetaData } from 'src/commons/types/common.type';
 import { Op, WhereOptions } from 'sequelize';
 import { QueryUtil } from 'src/commons/utils/query.util';
+import { InjectModel } from '@nestjs/sequelize';
 
 @Injectable()
 export class PostsService {
   constructor(
-    @Inject(POST_REPOSITORY_TOKEN)
+    @InjectModel(Post)
     private readonly postsRepository: typeof Post,
   ) {}
 

@@ -1,6 +1,5 @@
 import { QueryParamsDto } from 'src/commons/dtos/query-params.dto';
-import { Inject, Injectable } from '@nestjs/common';
-import { USER_REPOSITORY_TOKEN } from './users.provider';
+import { Injectable } from '@nestjs/common';
 import { User } from 'src/models/user.model';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { hashPassword } from 'src/commons/utils/hash.util';
@@ -8,11 +7,12 @@ import { handleError } from 'src/commons/utils/error.util';
 import { Op, WhereOptions } from 'sequelize';
 import { QueryUtil } from 'src/commons/utils/query.util';
 import { UpdateUserDto } from './dtos/update-user.dto';
+import { InjectModel } from '@nestjs/sequelize';
 
 @Injectable()
 export class UsersService {
   constructor(
-    @Inject(USER_REPOSITORY_TOKEN) private readonly userRepository: typeof User,
+    @InjectModel(User) private readonly userRepository: typeof User,
   ) {}
 
   async create(createUserDto: CreateUserDto) {
