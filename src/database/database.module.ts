@@ -20,6 +20,9 @@ import { models } from 'src/models';
         models: [...models],
         autoLoadModels: true,
         synchronize: configService.getOrThrow('NODE_ENV') === 'development',
+        sync: {
+          alter: true,
+        },
       }),
     }),
   ],

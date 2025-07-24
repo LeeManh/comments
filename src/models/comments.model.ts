@@ -9,6 +9,8 @@ import {
 import { AbstractModel } from './abstract.model';
 import { User } from './user.model';
 import { Post } from './post.model';
+import { Reaction } from './reaction.model';
+import { ReactionTarget } from 'src/commons/types/reaction.type';
 
 @Table({ tableName: 'comments', timestamps: true })
 export class Comment extends AbstractModel {
@@ -38,4 +40,11 @@ export class Comment extends AbstractModel {
 
   @HasMany(() => Comment, { foreignKey: 'parentId' })
   replies: Comment[];
+
+  @HasMany(() => Reaction, {
+    foreignKey: 'targetId',
+    constraints: false,
+    scope: { targetType: ReactionTarget.COMMENT },
+  })
+  reactions: Reaction[];
 }

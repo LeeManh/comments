@@ -1,5 +1,7 @@
 import {
   ForbiddenException,
+  forwardRef,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -13,12 +15,17 @@ import { MetaData } from 'src/commons/types/common.type';
 import { Op, WhereOptions } from 'sequelize';
 import { QueryUtil } from 'src/commons/utils/query.util';
 import { InjectModel } from '@nestjs/sequelize';
+import { Sequelize } from 'sequelize-typescript';
+import { ReactionTarget, ReactionType } from 'src/commons/types/reaction.type';
+import { ReactionsService } from 'src/reactions/reactions.service';
 
 @Injectable()
 export class PostsService {
   constructor(
     @InjectModel(Post)
     private readonly postsRepository: typeof Post,
+    @Inject(forwardRef(() => ReactionsService))
+    private readonly reactionsService: ReactionsService,
   ) {}
 
   async create(user: User, createPostDto: CreatePostDto) {
@@ -26,6 +33,7 @@ export class PostsService {
       const post = await this.postsRepository.create({
         ...createPostDto,
         authorId: user.id,
+        slug: await this.generateSlug(createPostDto.title),
       });
       return post;
     } catch (error) {
@@ -51,6 +59,28 @@ export class PostsService {
           attributes: ['id', 'username'],
         },
       ],
+      attributes: {
+        include: [
+          [
+            Sequelize.literal(`(
+              SELECT COUNT(*)
+              FROM comments
+              WHERE comments."postId" = "Post"."id"
+            )`),
+            'commentsCount',
+          ],
+          [
+            Sequelize.literal(`(
+              SELECT COUNT(*)
+              FROM reactions
+              WHERE reactions."targetId" = "Post"."id"
+                AND reactions."targetType" = ${ReactionTarget.POST}
+                AND reactions."type" = ${ReactionType.LIKE}
+            )`),
+            'likesCount',
+          ],
+        ],
+      },
       order: [['createdAt', 'DESC']],
       offset: QueryUtil.getOffset(page, limit),
       limit: limit,
@@ -61,7 +91,8 @@ export class PostsService {
     return { meta, data };
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, user?: User) {
+    console.log('user', user);
     const post = await this.postsRepository.findByPk(id, {
       include: [
         {
@@ -69,7 +100,32 @@ export class PostsService {
           attributes: ['id', 'username'],
         },
       ],
+      attributes: {
+        include: [
+          [
+            Sequelize.literal(`(
+              SELECT COUNT(*)
+              FROM comments
+              WHERE comments."postId" = "Post"."id"
+            )`),
+            'commentsCount',
+          ],
+          [
+            Sequelize.literal(`(
+              SELECT COUNT(*)
+              FROM reactions
+              WHERE reactions."targetId" = "Post"."id"
+                AND reactions."targetType" = ${ReactionTarget.POST}
+                AND reactions."type" = ${ReactionType.LIKE}
+            )`),
+            'likesCount',
+          ],
+        ],
+      },
     });
+
+    await this.setIsLiked(post, user);
+
     return post;
   }
 
@@ -95,5 +151,28 @@ export class PostsService {
     if (!isAuthor) throw new ForbiddenException('You are not the author');
 
     await this.postsRepository.destroy({ where: { id } });
+  }
+
+  private async generateSlug(title: string) {
+    let slug = title.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    slug = slug.toLowerCase();
+    slug = slug.replace(/[^a-z0-9]+/g, '-');
+    slug = slug.replace(/^-+|-+$/g, '').replace(/-+/g, '-');
+
+    return slug;
+  }
+
+  private async setIsLiked(post: Post, user?: User) {
+    if (user) {
+      const isLiked = await this.reactionsService.checkReaction(
+        user.id,
+        post.id,
+        ReactionTarget.POST,
+        ReactionType.LIKE,
+      );
+      post.setDataValue('isLiked', isLiked);
+    } else {
+      post.setDataValue('isLiked', false);
+    }
   }
 }

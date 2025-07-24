@@ -4,6 +4,7 @@ import { AbstractModel } from './abstract.model';
 import { Comment } from './comments.model';
 import { UserRole } from 'src/commons/types/user.type';
 import { RefreshToken } from './refresh-token.model';
+import { Reaction } from './reaction.model';
 
 @Table({ tableName: 'users', timestamps: true })
 export class User extends AbstractModel {
@@ -31,4 +32,7 @@ export class User extends AbstractModel {
 
   @HasMany(() => RefreshToken, { foreignKey: 'userId' })
   refreshTokens: RefreshToken[];
+
+  @HasMany(() => Reaction, { foreignKey: 'userId' })
+  reactions: Reaction[];
 }

@@ -43,7 +43,6 @@ export class AuthController {
   @Post('refresh-token')
   async refreshToken(
     @Body() refreshTokenDto: RefreshTokenDto,
-
     @DeviceInfo() deviceInfo: string,
   ) {
     return await this.authService.refreshToken(
