@@ -35,23 +35,7 @@ export class CommentsService {
       order: [['createdAt', 'ASC']],
     });
 
-    if (user && comments.length > 0) {
-      const commentIds = comments.map((comment) => comment.id);
-      const userReactions =
-        await this.reactionsService.getUserReactionsForComments(
-          user.id,
-          commentIds,
-        );
-      const reactionMap = new Map(userReactions.map((r) => [r.targetId, true]));
-
-      comments.forEach((comment) => {
-        comment.setDataValue('isLiked', reactionMap.has(comment.id));
-      });
-    } else {
-      comments.forEach((comment) => {
-        comment.setDataValue('isLiked', false);
-      });
-    }
+    await this.setIsLiked(comments, user);
 
     return this.buildCommentTree(comments);
   }
@@ -91,5 +75,25 @@ export class CommentsService {
     });
 
     return rootComments;
+  }
+
+  private async setIsLiked(comments: Comment[], user?: User) {
+    if (user && comments.length > 0) {
+      const commentIds = comments.map((comment) => comment.id);
+      const userReactions =
+        await this.reactionsService.getUserReactionsForComments(
+          user.id,
+          commentIds,
+        );
+      const reactionMap = new Map(userReactions.map((r) => [r.targetId, true]));
+
+      comments.forEach((comment) => {
+        comment.setDataValue('isLiked', reactionMap.has(comment.id));
+      });
+    } else {
+      comments.forEach((comment) => {
+        comment.setDataValue('isLiked', false);
+      });
+    }
   }
 }
