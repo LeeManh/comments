@@ -12,7 +12,18 @@ import { Comment } from './comments.model';
 import { Reaction } from './reaction.model';
 import { ReactionTarget } from 'src/commons/types/reaction.type';
 
-@Table({ tableName: 'posts', timestamps: true })
+@Table({
+  tableName: 'posts',
+  timestamps: true,
+  indexes: [
+    {
+      name: 'idx_unique_featured_post',
+      unique: true,
+      fields: ['featured'],
+      where: { featured: true },
+    },
+  ],
+})
 export class Post extends AbstractModel {
   @Column({ type: DataType.STRING, allowNull: false, unique: true })
   title: string;
@@ -45,4 +56,7 @@ export class Post extends AbstractModel {
     scope: { targetType: ReactionTarget.POST },
   })
   reactions: Reaction[];
+
+  @Column({ type: DataType.BOOLEAN, allowNull: false, defaultValue: false })
+  featured: boolean;
 }

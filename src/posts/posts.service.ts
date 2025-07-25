@@ -11,8 +11,8 @@ import { CreatePostDto } from './dtos/create-post.dto';
 import { UpdatePostDto } from './dtos/update-post.dto';
 import { handleError } from 'src/commons/utils/error.util';
 import { QueryParamsDto } from 'src/commons/dtos/query-params.dto';
-import { MetaData } from 'src/commons/types/common.type';
-import { Op, WhereOptions } from 'sequelize';
+import { MetaData, SortType } from 'src/commons/types/common.type';
+import { Op, OrderItem, WhereOptions } from 'sequelize';
 import { QueryUtil } from 'src/commons/utils/query.util';
 import { InjectModel } from '@nestjs/sequelize';
 import { Sequelize } from 'sequelize-typescript';
@@ -30,6 +30,9 @@ export class PostsService {
 
   async create(user: User, createPostDto: CreatePostDto) {
     try {
+      // remove old featured post
+      if (createPostDto.featured) await this.removeOldFeaturedPost(user.id);
+
       const post = await this.postsRepository.create({
         ...createPostDto,
         authorId: user.id,
@@ -42,7 +45,7 @@ export class PostsService {
   }
 
   async findAll(queryParamsDto: QueryParamsDto) {
-    const { page, limit, search } = queryParamsDto;
+    const { page, limit, search, sort } = queryParamsDto;
 
     const where: WhereOptions = {};
     if (search) {
@@ -81,7 +84,7 @@ export class PostsService {
           ],
         ],
       },
-      order: [['createdAt', 'DESC']],
+      order: this.getSortOrder(sort) as OrderItem[],
       offset: QueryUtil.getOffset(page, limit),
       limit: limit,
     });
@@ -129,6 +132,13 @@ export class PostsService {
     return post;
   }
 
+  async findFeatured() {
+    const post = await this.postsRepository.findOne({
+      where: { featured: true },
+    });
+    return post;
+  }
+
   async update(user: User, id: string, updatePostDto: UpdatePostDto) {
     try {
       const post = await this.findOne(id);
@@ -136,6 +146,9 @@ export class PostsService {
 
       const isAuthor = post.authorId === user.id;
       if (!isAuthor) throw new ForbiddenException('You are not the author');
+
+      if (updatePostDto.featured && !post.featured)
+        await this.removeOldFeaturedPost(user.id);
 
       await this.postsRepository.update(updatePostDto, { where: { id } });
     } catch (error) {
@@ -174,5 +187,28 @@ export class PostsService {
     } else {
       post.setDataValue('isLiked', false);
     }
+  }
+
+  private async removeOldFeaturedPost(userId: string) {
+    await this.postsRepository.update(
+      { featured: false },
+      { where: { featured: true, authorId: userId } },
+    );
+  }
+
+  private getSortOrder(sortType: SortType) {
+    const orders = {
+      [SortType.NEW]: [['createdAt', 'DESC']],
+      [SortType.TOP]: [
+        ['likesCount', 'DESC'],
+        ['createdAt', 'DESC'],
+      ],
+      [SortType.COMMUNITY]: [
+        ['commentsCount', 'DESC'],
+        ['createdAt', 'DESC'],
+      ],
+    };
+
+    return orders[sortType];
   }
 }

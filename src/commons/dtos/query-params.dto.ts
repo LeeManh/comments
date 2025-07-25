@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { SortType } from '../types/common.type';
 
 export class QueryParamsDto {
   @IsOptional()
@@ -18,4 +19,8 @@ export class QueryParamsDto {
   @IsOptional()
   @IsString()
   search?: string;
+
+  @IsOptional()
+  @IsEnum(SortType)
+  sort?: SortType = SortType.NEW;
 }
