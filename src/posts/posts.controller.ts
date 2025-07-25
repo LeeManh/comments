@@ -19,6 +19,7 @@ import { UpdatePostDto } from './dtos/update-post.dto';
 import { QueryParamsDto } from 'src/commons/dtos/query-params.dto';
 import { Roles } from 'src/commons/decorators/roles.decorator';
 import { UserRole } from 'src/commons/types/user.type';
+import { OptionalAuthApi } from 'src/commons/decorators/optional-auth-api.decorator';
 
 @Controller('posts')
 export class PostsController {
@@ -41,11 +42,14 @@ export class PostsController {
     return await this.postsService.findAll(queryParamsDto);
   }
 
-  @PublicApi()
+  @OptionalAuthApi()
   @ResponseMessage('Get post detail success')
   @Get(':id')
-  async findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return await this.postsService.findOne(id);
+  async findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user?: User,
+  ) {
+    return await this.postsService.findOne(id, user);
   }
 
   @Roles(UserRole.ADMIN)

@@ -4,6 +4,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TokenPayload } from 'src/commons/types/token.type';
 import { UsersService } from 'src/users/users.service';
+import { User } from 'src/models/user.model';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -18,7 +19,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: TokenPayload) {
+  async validate(payload: TokenPayload): Promise<User> {
     const user = await this.userService.findByEmail(payload.email);
     return user;
   }

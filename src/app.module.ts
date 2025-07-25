@@ -10,6 +10,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { CommentsModule } from './comments/comments.module';
 import { RolesGuard } from './auth/guards/roles.guard';
 import { RefreshTokensModule } from './refresh-tokens/refresh-tokens.module';
+import { ReactionsModule } from './reactions/reactions.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { RefreshTokensModule } from './refresh-tokens/refresh-tokens.module';
     PostsModule,
     CommentsModule,
     RefreshTokensModule,
+    ReactionsModule,
   ],
   controllers: [],
   providers: [
