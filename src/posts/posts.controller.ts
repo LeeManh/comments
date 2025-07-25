@@ -42,6 +42,13 @@ export class PostsController {
     return await this.postsService.findAll(queryParamsDto);
   }
 
+  @PublicApi()
+  @ResponseMessage('Get featured post success')
+  @Get('featured')
+  async findFeatured() {
+    return await this.postsService.findFeatured();
+  }
+
   @OptionalAuthApi()
   @ResponseMessage('Get post detail success')
   @Get(':id')
