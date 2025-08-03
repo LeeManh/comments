@@ -1,17 +1,15 @@
-import { forwardRef, Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Comment } from 'src/models/comments.model';
 import { CreateCommentDto } from './dtos/create-comment.dto';
 import { User } from 'src/models/user.model';
 import { InjectModel } from '@nestjs/sequelize';
-import { ReactionsService } from 'src/reactions/reactions.service';
+import { Sequelize } from 'sequelize-typescript';
 
 @Injectable()
 export class CommentsService {
   constructor(
     @InjectModel(Comment)
     private readonly commentsRepository: typeof Comment,
-    @Inject(forwardRef(() => ReactionsService))
-    private readonly reactionsService: ReactionsService,
   ) {}
 
   async create(user: User, createCommentDto: CreateCommentDto) {
@@ -24,20 +22,36 @@ export class CommentsService {
   }
 
   async findAll(postId: string, user?: User) {
-    const comments = await this.commentsRepository.findAll({
-      where: { postId },
-      include: [
-        {
-          model: User,
-          attributes: ['id', 'username'],
+    const { rows: comments, count } =
+      await this.commentsRepository.findAndCountAll({
+        where: { postId },
+        include: [
+          {
+            model: User,
+            attributes: ['id', 'username', 'avatar'],
+          },
+        ],
+        attributes: {
+          include: [
+            [
+              Sequelize.literal(`(
+              SELECT COUNT(*)
+              FROM comments AS replies
+              WHERE replies."parentId" = "Comment"."id"
+            )`),
+              'commentsCount',
+            ],
+          ],
         },
-      ],
-      order: [['createdAt', 'ASC']],
-    });
+        order: [['createdAt', 'DESC']],
+      });
 
-    await this.setIsLiked(comments, user);
+    const commentTree = this.buildCommentTree(comments);
 
-    return this.buildCommentTree(comments);
+    return {
+      data: commentTree,
+      meta: { total: count },
+    };
   }
 
   async findById(id: string) {
@@ -50,9 +64,13 @@ export class CommentsService {
 
     // Khởi tạo tất cả comments với mảng replies rỗng
     comments.forEach((comment) => {
+      const commentData = comment.toJSON();
+
       commentMap.set(comment.id, {
         ...comment.toJSON(),
         replies: [],
+        user: commentData.user || comment.user,
+        commentsCount: Number(comment.getDataValue('commentsCount') || 0),
       });
     });
 
@@ -75,25 +93,5 @@ export class CommentsService {
     });
 
     return rootComments;
-  }
-
-  private async setIsLiked(comments: Comment[], user?: User) {
-    if (user && comments.length > 0) {
-      const commentIds = comments.map((comment) => comment.id);
-      const userReactions =
-        await this.reactionsService.getUserReactionsForComments(
-          user.id,
-          commentIds,
-        );
-      const reactionMap = new Map(userReactions.map((r) => [r.targetId, true]));
-
-      comments.forEach((comment) => {
-        comment.setDataValue('isLiked', reactionMap.has(comment.id));
-      });
-    } else {
-      comments.forEach((comment) => {
-        comment.setDataValue('isLiked', false);
-      });
-    }
   }
 }

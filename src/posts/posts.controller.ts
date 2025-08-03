@@ -18,7 +18,7 @@ import { PublicApi } from 'src/commons/decorators/public-api.decorator';
 import { UpdatePostDto } from './dtos/update-post.dto';
 import { QueryParamsDto } from 'src/commons/dtos/query-params.dto';
 import { Roles } from 'src/commons/decorators/roles.decorator';
-import { UserRole } from 'src/commons/types/user.type';
+import { UserRole } from 'src/commons/constants/user.constant';
 import { OptionalAuthApi } from 'src/commons/decorators/optional-auth-api.decorator';
 
 @Controller('posts')

@@ -1,4 +1,4 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { CurrentUser } from 'src/commons/decorators/current-user.decorator';
@@ -49,5 +49,11 @@ export class AuthController {
       refreshTokenDto.refreshToken,
       deviceInfo,
     );
+  }
+
+  @ResponseMessage('Get me success')
+  @Get('me')
+  async getMe(@CurrentUser() user: User) {
+    return await this.authService.getMe(user);
   }
 }

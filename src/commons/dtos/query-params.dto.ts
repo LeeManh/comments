@@ -1,6 +1,6 @@
 import { Type } from 'class-transformer';
 import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
-import { SortType } from '../types/common.type';
+import { SortType } from '../constants/filter.constant';
 
 export class QueryParamsDto {
   @IsOptional()

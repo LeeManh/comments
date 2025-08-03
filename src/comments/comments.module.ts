@@ -3,13 +3,8 @@ import { CommentsController } from './comments.controller';
 import { CommentsService } from './comments.service';
 import { DatabaseModule } from 'src/database/database.module';
 import { Comment } from 'src/models/comments.model';
-import { ReactionsModule } from 'src/reactions/reactions.module';
-
 @Module({
-  imports: [
-    DatabaseModule.forFeature([Comment]),
-    forwardRef(() => ReactionsModule),
-  ],
+  imports: [DatabaseModule.forFeature([Comment])],
   controllers: [CommentsController],
   providers: [CommentsService],
   exports: [CommentsService],

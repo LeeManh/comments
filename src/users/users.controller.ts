@@ -11,7 +11,7 @@ import {
 import { UsersService } from './users.service';
 import { QueryParamsDto } from 'src/commons/dtos/query-params.dto';
 import { Roles } from 'src/commons/decorators/roles.decorator';
-import { UserRole } from 'src/commons/types/user.type';
+import { UserRole } from 'src/commons/constants/user.constant';
 import { ResponseMessage } from 'src/commons/decorators/response-message.decorator';
 import { UpdateUserDto } from './dtos/update-user.dto';
 

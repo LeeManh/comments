@@ -5,12 +5,13 @@ import {
   BelongsTo,
   ForeignKey,
   HasMany,
+  BelongsToMany,
 } from 'sequelize-typescript';
 import { AbstractModel } from './abstract.model';
 import { User } from './user.model';
 import { Comment } from './comments.model';
-import { Reaction } from './reaction.model';
-import { ReactionTarget } from 'src/commons/types/reaction.type';
+import { PostTag } from './post-tags.model';
+import { Tag } from './tag.model';
 
 @Table({
   tableName: 'posts',
@@ -29,7 +30,7 @@ export class Post extends AbstractModel {
   title: string;
 
   @Column({ type: DataType.STRING, allowNull: false })
-  subTitle: string;
+  description: string;
 
   @Column({ type: DataType.STRING, allowNull: false, unique: true })
   slug: string;
@@ -50,13 +51,9 @@ export class Post extends AbstractModel {
   @HasMany(() => Comment, { foreignKey: 'postId' })
   comments: Comment[];
 
-  @HasMany(() => Reaction, {
-    foreignKey: 'targetId',
-    constraints: false,
-    scope: { targetType: ReactionTarget.POST },
-  })
-  reactions: Reaction[];
-
   @Column({ type: DataType.BOOLEAN, allowNull: false, defaultValue: false })
   featured: boolean;
+
+  @BelongsToMany(() => Tag, () => PostTag, 'postId', 'tagId')
+  tags: Tag[];
 }

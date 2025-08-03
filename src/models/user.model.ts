@@ -2,9 +2,12 @@ import { Table, Column, DataType, HasMany } from 'sequelize-typescript';
 import { Post } from './post.model';
 import { AbstractModel } from './abstract.model';
 import { Comment } from './comments.model';
-import { UserRole } from 'src/commons/types/user.type';
+import { Gender, UserRole } from 'src/commons/constants/user.constant';
 import { RefreshToken } from './refresh-token.model';
-import { Reaction } from './reaction.model';
+import { Like } from './like.model';
+import { Bookmark } from './bookmark.model';
+import { Activity } from './activity.model';
+import { Series } from './series.model';
 
 @Table({ tableName: 'users', timestamps: true })
 export class User extends AbstractModel {
@@ -13,6 +16,15 @@ export class User extends AbstractModel {
 
   @Column({ type: DataType.STRING, allowNull: false, unique: true })
   username: string;
+
+  @Column({ type: DataType.STRING })
+  displayName: string;
+
+  @Column({ type: DataType.DATE })
+  birthDay: Date;
+
+  @Column({ type: DataType.INTEGER })
+  gender: Gender;
 
   @Column({ type: DataType.STRING, allowNull: false })
   password: string;
@@ -24,6 +36,9 @@ export class User extends AbstractModel {
   })
   role: UserRole;
 
+  @Column({ type: DataType.STRING, allowNull: true })
+  avatar?: string;
+
   @HasMany(() => Post, { foreignKey: 'authorId' })
   posts: Post[];
 
@@ -33,6 +48,15 @@ export class User extends AbstractModel {
   @HasMany(() => RefreshToken, { foreignKey: 'userId' })
   refreshTokens: RefreshToken[];
 
-  @HasMany(() => Reaction, { foreignKey: 'userId' })
-  reactions: Reaction[];
+  @HasMany(() => Like, { foreignKey: 'userId' })
+  likes: Like[];
+
+  @HasMany(() => Bookmark, { foreignKey: 'userId' })
+  bookmarks: Bookmark[];
+
+  @HasMany(() => Activity, { foreignKey: 'userId' })
+  activities: Activity[];
+
+  @HasMany(() => Series, { foreignKey: 'userId' })
+  series: Series[];
 }
