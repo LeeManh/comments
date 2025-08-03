@@ -13,7 +13,7 @@ export class CreatePostDto {
 
   @IsNotEmpty()
   @IsString()
-  subTitle: string;
+  description: string;
 
   @IsOptional()
   @IsUrl()
@@ -22,8 +22,4 @@ export class CreatePostDto {
   @IsNotEmpty()
   @IsString()
   content: string;
-
-  @IsOptional()
-  @IsBoolean()
-  featured?: boolean;
 }

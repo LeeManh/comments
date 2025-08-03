@@ -15,6 +15,7 @@ import { Op, OrderItem, WhereOptions } from 'sequelize';
 import { QueryUtil } from 'src/commons/utils/query.util';
 import { InjectModel } from '@nestjs/sequelize';
 import { Sequelize } from 'sequelize-typescript';
+import { generateSlug } from 'src/commons/utils/format.util';
 
 @Injectable()
 export class PostsService {
@@ -25,13 +26,10 @@ export class PostsService {
 
   async create(user: User, createPostDto: CreatePostDto) {
     try {
-      // remove old featured post
-      if (createPostDto.featured) await this.removeOldFeaturedPost(user.id);
-
       const post = await this.postsRepository.create({
         ...createPostDto,
         authorId: user.id,
-        slug: await this.generateSlug(createPostDto.title),
+        slug: generateSlug(createPostDto.title),
       });
       return post;
     } catch (error) {
@@ -112,45 +110,11 @@ export class PostsService {
     return post;
   }
 
-  async findFeatured() {
-    const post = await this.postsRepository.findOne({
-      where: { featured: true },
-      include: [
-        {
-          model: User,
-          attributes: ['id', 'username', 'avatar'],
-        },
-      ],
-      attributes: {
-        include: [
-          [
-            Sequelize.cast(
-              Sequelize.literal(`(
-              SELECT COUNT(*)
-              FROM comments
-              WHERE comments."postId" = "Post"."id"
-            )`),
-              'INTEGER',
-            ),
-            'commentsCount',
-          ],
-        ],
-      },
-    });
-
-    if (!post) throw new NotFoundException('Not found featured post');
-
-    return post;
-  }
-
   async update(user: User, id: string, updatePostDto: UpdatePostDto) {
     try {
       const post = await this.postsRepository.findByPk(id);
       if (!post) throw new NotFoundException('Not found post');
       if (post.authorId !== user.id) throw new ForbiddenException('Forbidden');
-
-      // remove old featured post
-      if (updatePostDto.featured) await this.removeOldFeaturedPost(user.id);
 
       await post.update(updatePostDto);
       return post;
@@ -170,32 +134,6 @@ export class PostsService {
     } catch (error) {
       handleError(error, 'Post');
     }
-  }
-
-  private async generateSlug(title: string) {
-    const baseSlug = title
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .trim();
-
-    let slug = baseSlug;
-    let counter = 1;
-
-    while (await this.postsRepository.findOne({ where: { slug } })) {
-      slug = `${baseSlug}-${counter}`;
-      counter++;
-    }
-
-    return slug;
-  }
-
-  private async removeOldFeaturedPost(userId: string) {
-    await this.postsRepository.update(
-      { featured: false },
-      { where: { authorId: userId, featured: true } },
-    );
   }
 
   private getSortOrder(sortType: SortType) {

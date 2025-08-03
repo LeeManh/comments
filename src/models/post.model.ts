@@ -16,14 +16,6 @@ import { Tag } from './tag.model';
 @Table({
   tableName: 'posts',
   timestamps: true,
-  indexes: [
-    {
-      name: 'idx_unique_featured_post',
-      unique: true,
-      fields: ['featured'],
-      where: { featured: true },
-    },
-  ],
 })
 export class Post extends AbstractModel {
   @Column({ type: DataType.STRING, allowNull: false, unique: true })
@@ -50,9 +42,6 @@ export class Post extends AbstractModel {
 
   @HasMany(() => Comment, { foreignKey: 'postId' })
   comments: Comment[];
-
-  @Column({ type: DataType.BOOLEAN, allowNull: false, defaultValue: false })
-  featured: boolean;
 
   @BelongsToMany(() => Tag, () => PostTag, 'postId', 'tagId')
   tags: Tag[];
