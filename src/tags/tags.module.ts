@@ -8,5 +8,6 @@ import { Tag } from 'src/models/tag.model';
   imports: [DatabaseModule.forFeature([Tag])],
   controllers: [TagsController],
   providers: [TagsService],
+  exports: [TagsService],
 })
 export class TagsModule {}

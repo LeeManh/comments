@@ -31,6 +31,13 @@ export class TagsService {
     return this.tagRepository.findByPk(id);
   }
 
+  async findOneOrCreateByName(name: string) {
+    return this.tagRepository.findOrCreate({
+      where: { name },
+      defaults: { name, slug: generateSlug(name) },
+    });
+  }
+
   async findAll() {
     return this.tagRepository.findAll();
   }

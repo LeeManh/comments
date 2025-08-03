@@ -5,40 +5,63 @@ import {
 } from '@nestjs/common';
 import { Post } from 'src/models/post.model';
 import { User } from 'src/models/user.model';
-import { CreatePostDto } from './dtos/create-post.dto';
+import { CreatePostDto, TagDto } from './dtos/create-post.dto';
 import { UpdatePostDto } from './dtos/update-post.dto';
 import { handleError } from 'src/commons/utils/error.util';
 import { QueryParamsDto } from 'src/commons/dtos/query-params.dto';
 import { MetaData } from 'src/commons/types/common.type';
-import { SortType } from 'src/commons/constants/filter.constant';
 import { Op, OrderItem, WhereOptions } from 'sequelize';
 import { QueryUtil } from 'src/commons/utils/query.util';
 import { InjectModel } from '@nestjs/sequelize';
 import { Sequelize } from 'sequelize-typescript';
 import { generateSlug } from 'src/commons/utils/format.util';
+import { TagsService } from 'src/tags/tags.service';
+import { Tag } from 'src/models/tag.model';
 
 @Injectable()
 export class PostsService {
   constructor(
     @InjectModel(Post)
     private readonly postsRepository: typeof Post,
+    private readonly tagService: TagsService,
   ) {}
+
+  private POST_INCLUDE = [
+    {
+      model: User,
+      attributes: ['id', 'username', 'avatar', 'displayName'],
+    },
+    {
+      model: Tag,
+      through: { attributes: [] },
+    },
+  ];
 
   async create(user: User, createPostDto: CreatePostDto) {
     try {
+      const { tags, ...postData } = createPostDto;
+
       const post = await this.postsRepository.create({
-        ...createPostDto,
+        ...postData,
         authorId: user.id,
         slug: generateSlug(createPostDto.title),
       });
-      return post;
+
+      if (tags && tags.length > 0) {
+        const tagInstances = await this.prepareTags(tags);
+        await post.$set('tags', tagInstances);
+      }
+
+      return await post.reload({
+        include: this.POST_INCLUDE,
+      });
     } catch (error) {
       handleError(error, 'Post');
     }
   }
 
   async findAll(queryParamsDto: QueryParamsDto) {
-    const { page, limit, search, sort } = queryParamsDto;
+    const { page, limit, search } = queryParamsDto;
 
     const where: WhereOptions = {};
     if (search) {
@@ -49,28 +72,8 @@ export class PostsService {
 
     const { count, rows: data } = await this.postsRepository.findAndCountAll({
       where,
-      include: [
-        {
-          model: User,
-          attributes: ['id', 'username', 'avatar'],
-        },
-      ],
-      attributes: {
-        include: [
-          [
-            Sequelize.cast(
-              Sequelize.literal(`(
-              SELECT COUNT(*)
-              FROM comments
-              WHERE comments."postId" = "Post"."id"
-            )`),
-              'INTEGER',
-            ),
-            'commentsCount',
-          ],
-        ],
-      },
-      order: this.getSortOrder(sort) as OrderItem[],
+      include: this.POST_INCLUDE,
+      order: [['createdAt', 'DESC']],
       offset: QueryUtil.getOffset(page, limit),
       limit: limit,
     });
@@ -82,27 +85,7 @@ export class PostsService {
 
   async findOne(id: string, user?: User) {
     const post = await this.postsRepository.findByPk(id, {
-      include: [
-        {
-          model: User,
-          attributes: ['id', 'username', 'avatar'],
-        },
-      ],
-      attributes: {
-        include: [
-          [
-            Sequelize.cast(
-              Sequelize.literal(`(
-              SELECT COUNT(*)
-              FROM comments
-              WHERE comments."postId" = "Post"."id"
-            )`),
-              'INTEGER',
-            ),
-            'commentsCount',
-          ],
-        ],
-      },
+      include: this.POST_INCLUDE,
     });
 
     if (!post) throw new NotFoundException('Not found post');
@@ -116,7 +99,19 @@ export class PostsService {
       if (!post) throw new NotFoundException('Not found post');
       if (post.authorId !== user.id) throw new ForbiddenException('Forbidden');
 
+      const { tags, ...postData } = updatePostDto;
+
       await post.update(updatePostDto);
+
+      if (tags !== undefined) {
+        if (tags && tags.length > 0) {
+          const tagInstances = await this.prepareTags(tags);
+          await post.$set('tags', tagInstances);
+        } else {
+          await post.$set('tags', []);
+        }
+      }
+
       return post;
     } catch (error) {
       handleError(error, 'Post');
@@ -136,22 +131,20 @@ export class PostsService {
     }
   }
 
-  private getSortOrder(sortType: SortType) {
-    switch (sortType) {
-      case SortType.NEW:
-        return [['createdAt', 'DESC']];
-      case SortType.TOP:
-        return [
-          ['commentsCount', 'DESC'],
-          ['createdAt', 'DESC'],
-        ];
-      case SortType.COMMUNITY:
-        return [
-          ['commentsCount', 'DESC'],
-          ['createdAt', 'DESC'],
-        ];
-      default:
-        return [['createdAt', 'DESC']];
+  private async prepareTags(tags: TagDto[]) {
+    const tagInstances: Tag[] = [];
+
+    for (const tagData of tags) {
+      let tag: Tag;
+      if (tagData.id) {
+        tag = await this.tagService.fineOne(tagData.id);
+      } else {
+        [tag] = await this.tagService.findOneOrCreateByName(tagData.name);
+      }
+
+      tagInstances.push(tag);
     }
+
+    return tagInstances;
   }
 }
