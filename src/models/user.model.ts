@@ -57,6 +57,6 @@ export class User extends AbstractModel {
   @HasMany(() => Activity, { foreignKey: 'userId' })
   activities: Activity[];
 
-  @HasMany(() => Series, { foreignKey: 'userId' })
+  @HasMany(() => Series, { foreignKey: 'authorId' })
   series: Series[];
 }

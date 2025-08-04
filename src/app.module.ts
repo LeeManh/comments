@@ -11,6 +11,7 @@ import { CommentsModule } from './comments/comments.module';
 import { RolesGuard } from './auth/guards/roles.guard';
 import { RefreshTokensModule } from './refresh-tokens/refresh-tokens.module';
 import { TagsModule } from './tags/tags.module';
+import { SeriesModule } from './series/series.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { TagsModule } from './tags/tags.module';
     CommentsModule,
     RefreshTokensModule,
     TagsModule,
+    SeriesModule,
   ],
   controllers: [],
   providers: [

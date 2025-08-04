@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -10,10 +11,9 @@ import { UpdatePostDto } from './dtos/update-post.dto';
 import { handleError } from 'src/commons/utils/error.util';
 import { QueryParamsDto } from 'src/commons/dtos/query-params.dto';
 import { MetaData } from 'src/commons/types/common.type';
-import { Op, OrderItem, WhereOptions } from 'sequelize';
+import { Op, where, WhereOptions } from 'sequelize';
 import { QueryUtil } from 'src/commons/utils/query.util';
 import { InjectModel } from '@nestjs/sequelize';
-import { Sequelize } from 'sequelize-typescript';
 import { generateSlug } from 'src/commons/utils/format.util';
 import { TagsService } from 'src/tags/tags.service';
 import { Tag } from 'src/models/tag.model';
@@ -83,7 +83,7 @@ export class PostsService {
     return { meta, data };
   }
 
-  async findOne(id: string, user?: User) {
+  async findOne(id: string) {
     const post = await this.postsRepository.findByPk(id, {
       include: this.POST_INCLUDE,
     });
@@ -101,7 +101,7 @@ export class PostsService {
 
       const { tags, ...postData } = updatePostDto;
 
-      await post.update(updatePostDto);
+      await post.update(postData);
 
       if (tags !== undefined) {
         if (tags && tags.length > 0) {
@@ -129,6 +129,32 @@ export class PostsService {
     } catch (error) {
       handleError(error, 'Post');
     }
+  }
+
+  async addPostsToSeries(userId: string, postIds: string[], seriesId: string) {
+    const posts = await this.postsRepository.findAll({
+      where: { id: postIds, authorId: userId },
+    });
+
+    if (posts.length !== postIds.length) {
+      const foundIds = posts.map((post) => post.id);
+      const notFoundIds = postIds.filter((id) => !foundIds.includes(id));
+      throw new BadRequestException(
+        `Posts not found or not owned by user: ${notFoundIds.join(', ')}`,
+      );
+    }
+
+    return await this.postsRepository.update(
+      { seriesId },
+      { where: { id: postIds, authorId: userId } },
+    );
+  }
+
+  async removePostsFormSeries(userId: string, seriesId: string) {
+    await this.postsRepository.update(
+      { seriesId: null },
+      { where: { id: seriesId, authorId: userId } },
+    );
   }
 
   private async prepareTags(tags: TagDto[]) {

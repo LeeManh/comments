@@ -12,6 +12,7 @@ import { User } from './user.model';
 import { Comment } from './comments.model';
 import { PostTag } from './post-tags.model';
 import { Tag } from './tag.model';
+import { Series } from './series.model';
 
 @Table({
   tableName: 'posts',
@@ -45,4 +46,11 @@ export class Post extends AbstractModel {
 
   @BelongsToMany(() => Tag, () => PostTag, 'postId', 'tagId')
   tags: Tag[];
+
+  @ForeignKey(() => Series)
+  @Column({ type: DataType.UUID, allowNull: true })
+  seriesId?: string;
+
+  @BelongsTo(() => Series, { foreignKey: 'seriesId', onDelete: 'SET NULL' })
+  series?: Series;
 }
