@@ -19,6 +19,8 @@ import { TagsService } from 'src/tags/tags.service';
 import { Tag } from 'src/models/tag.model';
 import { LikeTargetType } from 'src/commons/constants/like.constant';
 import { Literal } from 'sequelize/types/utils';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { EVENT_NAME } from 'src/commons/constants/event.constant';
 
 @Injectable()
 export class PostsService {
@@ -26,6 +28,7 @@ export class PostsService {
     @InjectModel(Post)
     private readonly postsRepository: typeof Post,
     private readonly tagService: TagsService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   private POST_INCLUDE = [
@@ -133,7 +136,8 @@ export class PostsService {
       if (post.authorId !== user.id) throw new ForbiddenException('Forbidden');
 
       await post.destroy();
-      return { message: 'Delete post success' };
+
+      this.eventEmitter.emit(EVENT_NAME.POST.DELETED, id);
     } catch (error) {
       handleError(error, 'Post');
     }
@@ -148,7 +152,7 @@ export class PostsService {
       const foundIds = posts.map((post) => post.id);
       const notFoundIds = postIds.filter((id) => !foundIds.includes(id));
       throw new BadRequestException(
-        `Posts not found or not owned by user: ${notFoundIds.join(', ')}`,
+        `Posts not found: ${notFoundIds.join(', ')}`,
       );
     }
 

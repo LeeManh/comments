@@ -20,12 +20,15 @@ import { MetaData } from 'src/commons/types/common.type';
 import { UpdateSeriesDto } from './dtos/update-series.dto';
 import { Literal } from 'sequelize/types/utils';
 import { LikeTargetType } from 'src/commons/constants/like.constant';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { EVENT_NAME } from 'src/commons/constants/event.constant';
 
 @Injectable()
 export class SeriesService {
   constructor(
     @InjectModel(Series) private readonly seriesRepository: typeof Series,
     private readonly postService: PostsService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   private SERIES_INCLUDE: Includeable[] = [
@@ -126,6 +129,8 @@ export class SeriesService {
   async delete(userId: string, seriesId: string) {
     const series = await this.findSeriesWithPermission(userId, seriesId);
     await series.destroy();
+
+    this.eventEmitter.emit(EVENT_NAME.SERIES.DELETED, seriesId);
   }
 
   private async findSeriesWithPermission(userId: string, seriesId: string) {

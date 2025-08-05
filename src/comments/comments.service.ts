@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Comment } from 'src/models/comments.model';
 import { CreateCommentDto } from './dtos/create-comment.dto';
 import { User } from 'src/models/user.model';
@@ -8,12 +12,15 @@ import { Literal } from 'sequelize/types/utils';
 import { LikeTargetType } from 'src/commons/constants/like.constant';
 import { FindAttributeOptions } from 'sequelize';
 import { CommentTargetType } from 'src/commons/constants/comment.constant';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { EVENT_NAME } from 'src/commons/constants/event.constant';
 
 @Injectable()
 export class CommentsService {
   constructor(
     @InjectModel(Comment)
     private readonly commentsRepository: typeof Comment,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async create(user: User, createCommentDto: CreateCommentDto) {
@@ -49,6 +56,17 @@ export class CommentsService {
 
   async findOneById(id: string) {
     return this.commentsRepository.findByPk(id);
+  }
+
+  async delete(userId: string, id: string) {
+    const comment = await this.commentsRepository.findByPk(id);
+    if (!comment) throw new NotFoundException('Comment not found');
+    if (comment.userId !== userId)
+      throw new ForbiddenException('You are not the owner of this comment');
+
+    await comment.destroy();
+
+    this.eventEmitter.emit(EVENT_NAME.COMMENT.DELETED, id);
   }
 
   private buildCommentTree(comments: Comment[]): any[] {

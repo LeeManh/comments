@@ -6,6 +6,7 @@ import { Like } from 'src/models/like.model';
 import { PostsModule } from 'src/posts/posts.module';
 import { SeriesModule } from 'src/series/series.module';
 import { CommentsModule } from 'src/comments/comments.module';
+import { LikesListener } from './likes.listener';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { CommentsModule } from 'src/comments/comments.module';
     CommentsModule,
   ],
   controllers: [LikesController],
-  providers: [LikesService],
+  providers: [LikesService, LikesListener],
+  exports: [LikesService],
 })
 export class LikesModule {}

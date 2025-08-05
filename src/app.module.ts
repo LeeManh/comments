@@ -13,10 +13,12 @@ import { RefreshTokensModule } from './refresh-tokens/refresh-tokens.module';
 import { TagsModule } from './tags/tags.module';
 import { SeriesModule } from './series/series.module';
 import { LikesModule } from './likes/likes.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    EventEmitterModule.forRoot({ global: true }),
     DatabaseModule,
     UsersModule,
     AuthModule,
