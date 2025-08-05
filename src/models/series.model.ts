@@ -9,7 +9,7 @@ import {
 import { AbstractModel } from './abstract.model';
 import { User } from './user.model';
 import { Post } from './post.model';
-import { Comment } from './comments.model';
+// import { Comment } from './comments.model';
 
 @Table({ tableName: 'series', timestamps: true })
 export class Series extends AbstractModel {
@@ -38,6 +38,6 @@ export class Series extends AbstractModel {
   @HasMany(() => Post, { foreignKey: 'seriesId' })
   posts: Post[];
 
-  @HasMany(() => Comment, { foreignKey: 'seriesId' })
-  comments: Comment[];
+  // @HasMany(() => Comment, { foreignKey: 'seriesId' })
+  // comments: Comment[];
 }

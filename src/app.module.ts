@@ -12,6 +12,7 @@ import { RolesGuard } from './auth/guards/roles.guard';
 import { RefreshTokensModule } from './refresh-tokens/refresh-tokens.module';
 import { TagsModule } from './tags/tags.module';
 import { SeriesModule } from './series/series.module';
+import { LikesModule } from './likes/likes.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { SeriesModule } from './series/series.module';
     RefreshTokensModule,
     TagsModule,
     SeriesModule,
+    LikesModule,
   ],
   controllers: [],
   providers: [

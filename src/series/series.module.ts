@@ -9,5 +9,6 @@ import { PostsModule } from 'src/posts/posts.module';
   imports: [DatabaseModule.forFeature([Series]), PostsModule],
   controllers: [SeriesController],
   providers: [SeriesService],
+  exports: [SeriesService],
 })
 export class SeriesModule {}

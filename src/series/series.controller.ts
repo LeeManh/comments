@@ -18,6 +18,7 @@ import { User } from 'src/models/user.model';
 import { ResponseMessage } from 'src/commons/decorators/response-message.decorator';
 import { QueryParamsDto } from 'src/commons/dtos/query-params.dto';
 import { UpdateSeriesDto } from './dtos/update-series.dto';
+import { OptionalAuthApi } from 'src/commons/decorators/optional-auth-api.decorator';
 
 @Controller('series')
 export class SeriesController {
@@ -33,16 +34,24 @@ export class SeriesController {
     return this.seriesService.create(user.id, createSeriesDto);
   }
 
+  @OptionalAuthApi()
   @ResponseMessage('Get series success')
   @Get(':id')
-  async findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.seriesService.findOne(id);
+  async findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user?: User,
+  ) {
+    return this.seriesService.findOne(id, user?.id);
   }
 
+  @OptionalAuthApi()
   @ResponseMessage('Get list series success')
   @Get()
-  async findAll(@Query() queryParamsDto: QueryParamsDto) {
-    return this.seriesService.findAll(queryParamsDto);
+  async findAll(
+    @Query() queryParamsDto: QueryParamsDto,
+    @CurrentUser() user?: User,
+  ) {
+    return this.seriesService.findAll(queryParamsDto, user?.id);
   }
 
   @Roles(UserRole.ADMIN)

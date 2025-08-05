@@ -11,13 +11,15 @@ import { generateSlug } from 'src/commons/utils/format.util';
 import { Post } from 'src/models/post.model';
 import { User } from 'src/models/user.model';
 import { PostsService } from 'src/posts/posts.service';
-import { Includeable, WhereOptions } from 'sequelize';
+import { FindAttributeOptions, Includeable, WhereOptions } from 'sequelize';
 import { Tag } from 'src/models/tag.model';
 import { QueryParamsDto } from 'src/commons/dtos/query-params.dto';
 import { Op } from 'sequelize';
 import { QueryUtil } from 'src/commons/utils/query.util';
 import { MetaData } from 'src/commons/types/common.type';
 import { UpdateSeriesDto } from './dtos/update-series.dto';
+import { Literal } from 'sequelize/types/utils';
+import { LikeTargetType } from 'src/commons/constants/like.constant';
 
 @Injectable()
 export class SeriesService {
@@ -46,7 +48,6 @@ export class SeriesService {
     },
   ];
 
-  // Create series
   async create(userId: string, createSeriesDto: CreateSeriesDto) {
     try {
       const { postIds, ...seriesData } = createSeriesDto;
@@ -66,17 +67,20 @@ export class SeriesService {
     }
   }
 
-  // get details 1 series
-  async findOne(id: string) {
+  async findOne(id: string, userId?: string) {
     const series = await this.seriesRepository.findByPk(id, {
       include: this.SERIES_INCLUDE,
+      attributes: this.getSeriesAttributes(userId),
     });
     if (!series) throw new NotFoundException('Series not found');
     return series;
   }
 
-  // get list series
-  async findAll(queryParamsDto: QueryParamsDto) {
+  async findOneById(id: string) {
+    return this.seriesRepository.findByPk(id);
+  }
+
+  async findAll(queryParamsDto: QueryParamsDto, userId?: string) {
     const { page, limit, search } = queryParamsDto;
 
     const where: WhereOptions = {};
@@ -92,6 +96,7 @@ export class SeriesService {
       order: [['createdAt', 'DESC']],
       offset: QueryUtil.getOffset(page, limit),
       limit: limit,
+      attributes: this.getSeriesAttributes(userId),
     });
 
     const meta: MetaData = QueryUtil.calculateMeta(page, limit, count);
@@ -155,5 +160,60 @@ export class SeriesService {
 
     if (postIds.length > 0)
       await this.postService.addPostsToSeries(userId, postIds, series.id);
+  }
+
+  private getLikeCountAttributes(): [Literal, string][] {
+    return [
+      [
+        this.seriesRepository.sequelize.literal(`(
+          SELECT CAST(COUNT(*) AS INTEGER) 
+          FROM likes
+          WHERE likes."targetId" = "Series".id
+          AND likes."targetType" = ${LikeTargetType.SERIES}
+          AND likes."isDislike" = false
+        )`),
+        'likes',
+      ],
+      [
+        this.seriesRepository.sequelize.literal(`(
+          SELECT CAST(COUNT(*) AS INTEGER)
+          FROM likes
+          WHERE likes."targetId" = "Series".id
+          AND likes."targetType" = ${LikeTargetType.SERIES}
+          AND likes."isDislike" = true
+        )`),
+        'dislikes',
+      ],
+    ];
+  }
+
+  private getUserLikeStatusAttribute(userId: string): [Literal, string] {
+    return [
+      this.seriesRepository.sequelize.literal(`(
+        SELECT CASE 
+          WHEN "isDislike" = true THEN 'dislike'
+          WHEN "isDislike" = false THEN 'like'
+          ELSE NULL
+        END
+        FROM likes
+        WHERE likes."targetId" = "Series".id 
+        AND likes."targetType" = ${LikeTargetType.SERIES}
+        AND likes."userId" = '${userId}'
+        LIMIT 1
+      )`),
+      'reaction',
+    ];
+  }
+
+  private getSeriesAttributes(userId?: string): FindAttributeOptions {
+    const attributes = {
+      include: this.getLikeCountAttributes(),
+    };
+
+    if (userId) {
+      attributes.include.push(this.getUserLikeStatusAttribute(userId));
+    }
+
+    return attributes;
   }
 }

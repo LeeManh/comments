@@ -22,6 +22,7 @@ import { models } from 'src/models';
         synchronize: configService.getOrThrow('NODE_ENV') === 'development',
         sync: {
           alter: true,
+          // force: true,
         },
       }),
     }),

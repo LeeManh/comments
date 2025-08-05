@@ -4,6 +4,10 @@ import { CreateCommentDto } from './dtos/create-comment.dto';
 import { User } from 'src/models/user.model';
 import { InjectModel } from '@nestjs/sequelize';
 import { Sequelize } from 'sequelize-typescript';
+import { Literal } from 'sequelize/types/utils';
+import { LikeTargetType } from 'src/commons/constants/like.constant';
+import { FindAttributeOptions } from 'sequelize';
+import { CommentTargetType } from 'src/commons/constants/comment.constant';
 
 @Injectable()
 export class CommentsService {
@@ -21,28 +25,17 @@ export class CommentsService {
     return comment;
   }
 
-  async findAll(postId: string, user?: User) {
+  async findAll(targetId: string, targetType: CommentTargetType, user?: User) {
     const { rows: comments, count } =
       await this.commentsRepository.findAndCountAll({
-        where: { postId },
+        where: { targetId, targetType },
         include: [
           {
             model: User,
-            attributes: ['id', 'username', 'avatar'],
+            attributes: ['id', 'username', 'avatar', 'displayName'],
           },
         ],
-        attributes: {
-          include: [
-            [
-              Sequelize.literal(`(
-              SELECT COUNT(*)
-              FROM comments AS replies
-              WHERE replies."parentId" = "Comment"."id"
-            )`),
-              'commentsCount',
-            ],
-          ],
-        },
+        attributes: this.getCommentAttributes(user?.id),
         order: [['createdAt', 'DESC']],
       });
 
@@ -54,8 +47,8 @@ export class CommentsService {
     };
   }
 
-  async findById(id: string) {
-    return await this.commentsRepository.findByPk(id);
+  async findOneById(id: string) {
+    return this.commentsRepository.findByPk(id);
   }
 
   private buildCommentTree(comments: Comment[]): any[] {
@@ -93,5 +86,60 @@ export class CommentsService {
     });
 
     return rootComments;
+  }
+
+  private getLikeCountAttributes(): [Literal, string][] {
+    return [
+      [
+        this.commentsRepository.sequelize.literal(`(
+          SELECT CAST(COUNT(*) AS INTEGER) 
+          FROM likes
+          WHERE likes."targetId" = "Comment".id
+          AND likes."targetType" = ${LikeTargetType.COMMENT}
+          AND likes."isDislike" = false
+        )`),
+        'likes',
+      ],
+      [
+        this.commentsRepository.sequelize.literal(`(
+          SELECT CAST(COUNT(*) AS INTEGER)
+          FROM likes
+          WHERE likes."targetId" = "Comment".id
+          AND likes."targetType" = ${LikeTargetType.COMMENT}
+          AND likes."isDislike" = true
+        )`),
+        'dislikes',
+      ],
+    ];
+  }
+
+  private getUserLikeStatusAttribute(userId: string): [Literal, string] {
+    return [
+      this.commentsRepository.sequelize.literal(`(
+        SELECT CASE 
+          WHEN "isDislike" = true THEN 'dislike'
+          WHEN "isDislike" = false THEN 'like'
+          ELSE NULL
+        END
+        FROM likes
+        WHERE likes."targetId" = "Comment".id 
+        AND likes."targetType" = ${LikeTargetType.COMMENT}
+        AND likes."userId" = '${userId}'
+        LIMIT 1
+      )`),
+      'reaction',
+    ];
+  }
+
+  private getCommentAttributes(userId?: string): FindAttributeOptions {
+    const attributes = {
+      include: this.getLikeCountAttributes(),
+    };
+
+    if (userId) {
+      attributes.include.push(this.getUserLikeStatusAttribute(userId));
+    }
+
+    return attributes;
   }
 }

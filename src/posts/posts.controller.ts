@@ -35,22 +35,25 @@ export class PostsController {
     return await this.postsService.create(user, createPostDto);
   }
 
-  @PublicApi()
+  @OptionalAuthApi()
   @ResponseMessage('Get posts success')
   @Get('')
-  async findAll(@Query() queryParamsDto: QueryParamsDto) {
-    return await this.postsService.findAll(queryParamsDto);
+  async findAll(
+    @Query() queryParamsDto: QueryParamsDto,
+    @CurrentUser() user?: User,
+  ) {
+    return await this.postsService.findAll(queryParamsDto, user?.id);
   }
 
-  @PublicApi()
+  @OptionalAuthApi()
   @ResponseMessage('Get post detail success')
   @Get(':id')
-  async findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return await this.postsService.findOne(id);
+  async findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user?: User,
+  ) {
+    return await this.postsService.findOne(id, user?.id);
   }
-
-  // @PublicApi()
-  // @ResponseMessage("Add posts to series success")
 
   @Roles(UserRole.ADMIN)
   @ResponseMessage('Update post success')

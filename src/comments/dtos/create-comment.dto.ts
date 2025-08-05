@@ -1,8 +1,20 @@
-import { IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUUID,
+} from 'class-validator';
+import { CommentTargetType } from 'src/commons/constants/comment.constant';
 
 export class CreateCommentDto {
+  @IsNotEmpty()
   @IsUUID()
-  postId: string;
+  targetId: string;
+
+  @IsNotEmpty()
+  @IsEnum(CommentTargetType)
+  targetType: CommentTargetType;
 
   @IsNotEmpty()
   @IsString()
