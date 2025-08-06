@@ -35,23 +35,43 @@ export class SeriesController {
   }
 
   @OptionalAuthApi()
-  @ResponseMessage('Get series success')
-  @Get(':id')
-  async findOne(
-    @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser() user?: User,
-  ) {
-    return this.seriesService.findOne(id, user?.id);
-  }
-
-  @OptionalAuthApi()
   @ResponseMessage('Get list series success')
   @Get()
   async findAll(
     @Query() queryParamsDto: QueryParamsDto,
     @CurrentUser() user?: User,
   ) {
-    return this.seriesService.findAll(queryParamsDto, user?.id);
+    return this.seriesService.findAll(queryParamsDto, user);
+  }
+
+  @Roles(UserRole.ADMIN)
+  @ResponseMessage('Get series success')
+  @Get('admin/all')
+  async findAllAdmin(
+    @Query() queryParamsDto: QueryParamsDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.seriesService.findAll(queryParamsDto, user, true);
+  }
+
+  @OptionalAuthApi()
+  @ResponseMessage('Get series detail success')
+  @Get(':id')
+  async findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user?: User,
+  ) {
+    return this.seriesService.findOne(id, user);
+  }
+
+  @Roles(UserRole.ADMIN)
+  @ResponseMessage('Get series detail success')
+  @Get('admin/:id')
+  async findOneAdmin(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: User,
+  ) {
+    return this.seriesService.findOne(id, user, true);
   }
 
   @Roles(UserRole.ADMIN)

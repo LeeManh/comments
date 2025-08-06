@@ -1,12 +1,20 @@
 import { Type } from 'class-transformer';
 import {
   IsArray,
+  IsDateString,
+  IsEnum,
   IsNotEmpty,
   IsOptional,
   IsString,
+  IsUrl,
   IsUUID,
   ValidateNested,
+  ValidateIf,
 } from 'class-validator';
+import {
+  SeriesStatus,
+  SeriesVisibility,
+} from 'src/commons/constants/series.constant';
 
 export class TagDto {
   @IsOptional()
@@ -19,29 +27,41 @@ export class TagDto {
 }
 
 export class CreateSeriesDto {
-  @IsString()
   @IsNotEmpty()
+  @IsString()
   title: string;
 
-  @IsString()
   @IsNotEmpty()
+  @IsString()
   description: string;
 
-  @IsString()
   @IsNotEmpty()
+  @IsString()
   content: string;
 
-  @IsOptional()
-  @IsString()
   @IsNotEmpty()
+  @IsUrl()
   thumbnail: string;
 
   @IsArray()
-  @IsString({ each: true })
+  @IsUUID('4', { each: true })
   postIds: string[];
 
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => TagDto)
   tags: TagDto[];
+
+  @IsOptional()
+  @IsEnum(SeriesStatus)
+  status?: SeriesStatus = SeriesStatus.DRAFT;
+
+  @IsOptional()
+  @IsEnum(SeriesVisibility)
+  visibility?: SeriesVisibility = SeriesVisibility.PRIVATE;
+
+  @ValidateIf((o) => o.status === SeriesStatus.SCHEDULED)
+  @IsNotEmpty({ message: 'scheduledAt is required for scheduled series' })
+  @IsDateString()
+  scheduledAt?: string;
 }

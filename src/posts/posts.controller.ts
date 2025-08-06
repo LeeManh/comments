@@ -14,7 +14,6 @@ import { ResponseMessage } from 'src/commons/decorators/response-message.decorat
 import { CreatePostDto } from './dtos/create-post.dto';
 import { CurrentUser } from 'src/commons/decorators/current-user.decorator';
 import { User } from 'src/models/user.model';
-import { PublicApi } from 'src/commons/decorators/public-api.decorator';
 import { UpdatePostDto } from './dtos/update-post.dto';
 import { QueryParamsDto } from 'src/commons/dtos/query-params.dto';
 import { Roles } from 'src/commons/decorators/roles.decorator';
@@ -42,7 +41,17 @@ export class PostsController {
     @Query() queryParamsDto: QueryParamsDto,
     @CurrentUser() user?: User,
   ) {
-    return await this.postsService.findAll(queryParamsDto, user?.id);
+    return await this.postsService.findAll(queryParamsDto, user);
+  }
+
+  @Roles(UserRole.ADMIN)
+  @ResponseMessage('Get posts success')
+  @Get('admin/all')
+  async findAllAdmin(
+    @Query() queryParamsDto: QueryParamsDto,
+    @CurrentUser() user: User,
+  ) {
+    return await this.postsService.findAll(queryParamsDto, user, true);
   }
 
   @OptionalAuthApi()
@@ -52,7 +61,17 @@ export class PostsController {
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user?: User,
   ) {
-    return await this.postsService.findOne(id, user?.id);
+    return await this.postsService.findOne(id, user);
+  }
+
+  @Roles(UserRole.ADMIN)
+  @ResponseMessage('Get post detail success')
+  @Get('admin/:id')
+  async findOneAdmin(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: User,
+  ) {
+    return await this.postsService.findOne(id, user, true);
   }
 
   @Roles(UserRole.ADMIN)

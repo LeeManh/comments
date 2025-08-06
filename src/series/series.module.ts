@@ -6,6 +6,7 @@ import { Series } from 'src/models/series.model';
 import { PostsModule } from 'src/posts/posts.module';
 import { SeriesTags } from 'src/models/series-tags.model';
 import { TagsModule } from 'src/tags/tags.module';
+import { SeriesSchedulerService } from './series-scheduler.service';
 
 @Module({
   imports: [
@@ -14,7 +15,7 @@ import { TagsModule } from 'src/tags/tags.module';
     TagsModule,
   ],
   controllers: [SeriesController],
-  providers: [SeriesService],
+  providers: [SeriesService, SeriesSchedulerService],
   exports: [SeriesService],
 })
 export class SeriesModule {}

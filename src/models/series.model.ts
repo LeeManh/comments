@@ -14,6 +14,10 @@ import { BookmarkTargetType } from 'src/commons/constants/bookmark.constant';
 import { Bookmark } from './bookmark.model';
 import { Tag } from './tag.model';
 import { SeriesTags } from './series-tags.model';
+import {
+  SeriesStatus,
+  SeriesVisibility,
+} from 'src/commons/constants/series.constant';
 
 @Table({ tableName: 'series', timestamps: true })
 export class Series extends AbstractModel {
@@ -51,4 +55,24 @@ export class Series extends AbstractModel {
 
   @BelongsToMany(() => Tag, () => SeriesTags, 'seriesId', 'tagId')
   tags: Tag[];
+
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    defaultValue: SeriesStatus.DRAFT,
+  })
+  status: SeriesStatus;
+
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    defaultValue: SeriesVisibility.PRIVATE,
+  })
+  visibility: SeriesVisibility;
+
+  @Column({ type: DataType.DATE, allowNull: true })
+  publishedAt: Date;
+
+  @Column({ type: DataType.DATE, allowNull: true })
+  scheduledAt: Date;
 }

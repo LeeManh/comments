@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -23,6 +24,15 @@ import { LikeTargetType } from 'src/commons/constants/like.constant';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { EVENT_NAME } from 'src/commons/constants/event.constant';
 import { TagsService } from 'src/tags/tags.service';
+import {
+  SeriesStatus,
+  SeriesVisibility,
+} from 'src/commons/constants/series.constant';
+import { UserRole } from 'src/commons/constants/user.constant';
+import {
+  PostStatus,
+  PostVisibility,
+} from 'src/commons/constants/post.constant';
 
 @Injectable()
 export class SeriesService {
@@ -34,19 +44,19 @@ export class SeriesService {
   ) {}
 
   private SERIES_INCLUDE: Includeable[] = [
-    {
-      model: Post,
-      include: [
-        {
-          model: User,
-          attributes: ['id', 'username', 'avatar', 'displayName'],
-        },
-        {
-          model: Tag,
-          through: { attributes: [] },
-        },
-      ],
-    },
+    // {
+    //   model: Post,
+    //   include: [
+    //     {
+    //       model: User,
+    //       attributes: ['id', 'username', 'avatar', 'displayName'],
+    //     },
+    //     {
+    //       model: Tag,
+    //       through: { attributes: [] },
+    //     },
+    //   ],
+    // },
     {
       model: User,
       attributes: ['id', 'username', 'avatar', 'displayName'],
@@ -60,6 +70,10 @@ export class SeriesService {
   async create(userId: string, createSeriesDto: CreateSeriesDto) {
     try {
       const { postIds, tags, ...seriesData } = createSeriesDto;
+
+      // Xử lý logic status và publishedAt
+      this.setPublishedAtByStatus(seriesData);
+
       const series = await this.seriesRepository.create({
         ...seriesData,
         slug: generateSlug(seriesData.title),
@@ -81,10 +95,19 @@ export class SeriesService {
     }
   }
 
-  async findOne(id: string, userId?: string) {
-    const series = await this.seriesRepository.findByPk(id, {
-      include: this.SERIES_INCLUDE,
-      attributes: this.getSeriesAttributes(userId),
+  async findOne(id: string, user?: User, isAdminApi = false) {
+    const where: WhereOptions = { id };
+
+    // Lọc theo quyền đọc
+    this.applySeriesVisibilityFilter(where, isAdminApi);
+
+    const series = await this.seriesRepository.findOne({
+      where,
+      include: [
+        ...this.SERIES_INCLUDE,
+        this.getPostIncludeInSeries(isAdminApi),
+      ],
+      attributes: this.getSeriesAttributes(user?.id),
     });
     if (!series) throw new NotFoundException('Series not found');
     return series;
@@ -94,7 +117,11 @@ export class SeriesService {
     return this.seriesRepository.findByPk(id);
   }
 
-  async findAll(queryParamsDto: QueryParamsDto, userId?: string) {
+  async findAll(
+    queryParamsDto: QueryParamsDto,
+    user?: User,
+    isAdminApi = false,
+  ) {
     const { page, limit, search } = queryParamsDto;
 
     const where: WhereOptions = {};
@@ -104,13 +131,20 @@ export class SeriesService {
       };
     }
 
+    // Lọc theo quyền đọc
+    this.applySeriesVisibilityFilter(where, isAdminApi);
+
     const { count, rows: data } = await this.seriesRepository.findAndCountAll({
       where,
-      include: this.SERIES_INCLUDE,
+      include: [
+        ...this.SERIES_INCLUDE,
+        this.getPostIncludeInSeries(isAdminApi),
+      ],
       order: [['createdAt', 'DESC']],
       offset: QueryUtil.getOffset(page, limit),
       limit: limit,
-      attributes: this.getSeriesAttributes(userId),
+      attributes: this.getSeriesAttributes(user?.id),
+      distinct: true,
     });
 
     const meta: MetaData = QueryUtil.calculateMeta(page, limit, count);
@@ -127,6 +161,10 @@ export class SeriesService {
     try {
       const series = await this.findSeriesWithPermission(userId, seriesId);
       const { postIds, ...seriesData } = updateSeriesDto;
+
+      // Xử lý logic status và publishedAt
+      this.setPublishedAtByStatus(seriesData);
+
       await this.updateSeriesData(series, seriesData);
       await this.updateSeriesPosts(userId, series, postIds);
 
@@ -248,5 +286,65 @@ export class SeriesService {
     }
 
     return tagInstances;
+  }
+
+  private setPublishedAtByStatus(seriesData: any) {
+    const now = new Date();
+
+    if (seriesData.status === SeriesStatus.SCHEDULED) {
+      if (!seriesData.scheduledAt) {
+        throw new BadRequestException(
+          'scheduledAt is required for scheduled series',
+        );
+      }
+
+      const scheduled = new Date(seriesData.scheduledAt);
+      if (scheduled <= now) {
+        throw new BadRequestException('scheduledAt must be in the future');
+      }
+
+      seriesData.publishedAt = scheduled;
+    } else if (seriesData.status === SeriesStatus.PUBLISHED) {
+      seriesData.publishedAt = now;
+    } else {
+      // DRAFT hoặc các status khác
+      seriesData.publishedAt = null;
+    }
+  }
+
+  private applySeriesVisibilityFilter(
+    where: WhereOptions,
+    isAdminApi?: boolean,
+  ) {
+    if (isAdminApi) return;
+
+    // Người dùng chưa đăng nhập chỉ xem được series PUBLIC và PUBLISHED
+    where[Op.and] = [
+      { status: SeriesStatus.PUBLISHED },
+      { visibility: SeriesVisibility.PUBLIC },
+    ];
+  }
+
+  private getPostIncludeInSeries(isAdminApi?: boolean): Includeable {
+    return {
+      model: Post,
+      required: false,
+      where: isAdminApi
+        ? undefined
+        : {
+            status: PostStatus.PUBLISHED,
+            visibility: PostVisibility.PUBLIC,
+          },
+      include: [
+        {
+          model: User,
+          attributes: ['id', 'username', 'avatar', 'displayName'],
+        },
+        {
+          model: Tag,
+          through: { attributes: [] },
+        },
+      ],
+    };
   }
 }

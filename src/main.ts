@@ -46,6 +46,5 @@ async function bootstrap() {
   await app.listen(port);
 
   logger.log(`🚀 Application is running on: http://localhost:${port}`);
-  logger.log(`Posts Scheduler is active - checking every minute`);
 }
 bootstrap();

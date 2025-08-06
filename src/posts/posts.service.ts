@@ -71,7 +71,11 @@ export class PostsService {
     }
   }
 
-  async findAll(queryParamsDto: QueryParamsDto, userId?: string) {
+  async findAll(
+    queryParamsDto: QueryParamsDto,
+    user?: User,
+    isAdminApi = false,
+  ) {
     const { page, limit, search } = queryParamsDto;
 
     const where: WhereOptions = {};
@@ -82,7 +86,7 @@ export class PostsService {
     }
 
     // Lọc theo quyền đọc
-    this.applyPostVisibilityFilter(where, userId);
+    this.applyPostVisibilityFilter(where, isAdminApi);
 
     const { count, rows: data } = await this.postsRepository.findAndCountAll({
       where,
@@ -90,7 +94,8 @@ export class PostsService {
       order: [['createdAt', 'DESC']],
       offset: QueryUtil.getOffset(page, limit),
       limit: limit,
-      attributes: this.getPostAttributes(userId),
+      attributes: this.getPostAttributes(user?.id),
+      distinct: true,
     });
 
     const meta: MetaData = QueryUtil.calculateMeta(page, limit, count);
@@ -98,16 +103,16 @@ export class PostsService {
     return { meta, data };
   }
 
-  async findOne(id: string, userId?: string) {
+  async findOne(id: string, user?: User, isAdminApi = false) {
     const where: WhereOptions = { id };
 
     // Lọc theo quyền đọc
-    this.applyPostVisibilityFilter(where, userId);
+    this.applyPostVisibilityFilter(where, isAdminApi);
 
     const post = await this.postsRepository.findOne({
       where,
       include: this.POST_INCLUDE,
-      attributes: this.getPostAttributes(userId),
+      attributes: this.getPostAttributes(user?.id),
     });
 
     if (!post) throw new NotFoundException('Not found post');
@@ -283,26 +288,13 @@ export class PostsService {
     }
   }
 
-  private applyPostVisibilityFilter(where: WhereOptions, userId?: string) {
-    if (!userId) {
-      // Người dùng chưa đăng nhập chỉ xem được bài viết PUBLIC và PUBLISHED
-      where[Op.and] = [
-        { status: PostStatus.PUBLISHED },
-        { visibility: PostVisibility.PUBLIC },
-      ];
-    } else {
-      // Người dùng đã đăng nhập có thể xem:
-      // 1. Bài viết PUBLIC và PUBLISHED
-      // 2. Bài viết của chính họ (kể cả DRAFT, PRIVATE, SCHEDULED)
-      where[Op.or] = [
-        {
-          status: PostStatus.PUBLISHED,
-          visibility: PostVisibility.PUBLIC,
-        },
-        {
-          authorId: userId,
-        },
-      ];
-    }
+  private applyPostVisibilityFilter(where: WhereOptions, isAdminApi?: boolean) {
+    if (isAdminApi) return;
+
+    // Người dùng chưa đăng nhập chỉ xem được bài viết PUBLIC và PUBLISHED
+    where[Op.and] = [
+      { status: PostStatus.PUBLISHED },
+      { visibility: PostVisibility.PUBLIC },
+    ];
   }
 }
