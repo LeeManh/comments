@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Series } from 'src/models/series.model';
-import { CreateSeriesDto } from './dtos/create-series.dto';
+import { CreateSeriesDto, TagDto } from './dtos/create-series.dto';
 import { handleError } from 'src/commons/utils/error.util';
 import { generateSlug } from 'src/commons/utils/format.util';
 import { Post } from 'src/models/post.model';
@@ -22,6 +22,7 @@ import { Literal } from 'sequelize/types/utils';
 import { LikeTargetType } from 'src/commons/constants/like.constant';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { EVENT_NAME } from 'src/commons/constants/event.constant';
+import { TagsService } from 'src/tags/tags.service';
 
 @Injectable()
 export class SeriesService {
@@ -29,6 +30,7 @@ export class SeriesService {
     @InjectModel(Series) private readonly seriesRepository: typeof Series,
     private readonly postService: PostsService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly tagsService: TagsService,
   ) {}
 
   private SERIES_INCLUDE: Includeable[] = [
@@ -49,11 +51,15 @@ export class SeriesService {
       model: User,
       attributes: ['id', 'username', 'avatar', 'displayName'],
     },
+    {
+      model: Tag,
+      through: { attributes: [] },
+    },
   ];
 
   async create(userId: string, createSeriesDto: CreateSeriesDto) {
     try {
-      const { postIds, ...seriesData } = createSeriesDto;
+      const { postIds, tags, ...seriesData } = createSeriesDto;
       const series = await this.seriesRepository.create({
         ...seriesData,
         slug: generateSlug(seriesData.title),
@@ -62,6 +68,11 @@ export class SeriesService {
 
       if (postIds.length > 0) {
         await this.postService.addPostsToSeries(userId, postIds, series.id);
+      }
+
+      if (tags && tags.length > 0) {
+        const tagInstances = await this.prepareTags(tags);
+        await series.$set('tags', tagInstances);
       }
 
       return series.reload({ include: this.SERIES_INCLUDE });
@@ -220,5 +231,22 @@ export class SeriesService {
     }
 
     return attributes;
+  }
+
+  private async prepareTags(tags: TagDto[]) {
+    const tagInstances: Tag[] = [];
+
+    for (const tagData of tags) {
+      let tag: Tag;
+      if (tagData.id) {
+        tag = await this.tagsService.fineOne(tagData.id);
+      } else {
+        [tag] = await this.tagsService.findOneOrCreateByName(tagData.name);
+      }
+
+      tagInstances.push(tag);
+    }
+
+    return tagInstances;
   }
 }

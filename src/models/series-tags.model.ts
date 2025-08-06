@@ -6,31 +6,31 @@ import {
   ForeignKey,
 } from 'sequelize-typescript';
 import { AbstractModel } from './abstract.model';
-import { Post } from './post.model';
 import { Tag } from './tag.model';
+import { Series } from './series.model';
 
 @Table({
-  tableName: 'post_tags',
+  tableName: 'series_tags',
   timestamps: true,
   indexes: [
     {
-      name: 'idx_unique_post_tag',
+      name: 'idx_unique_series_tag',
       unique: true,
-      fields: ['postId', 'tagId'],
+      fields: ['seriesId', 'tagId'],
     },
     {
-      name: 'idx_post_tags_tag_id',
+      name: 'idx_series_tags_tag_id',
       fields: ['tagId'],
     },
   ],
 })
-export class PostTag extends AbstractModel {
-  @ForeignKey(() => Post)
+export class SeriesTags extends AbstractModel {
+  @ForeignKey(() => Series)
   @Column({ type: DataType.UUID, allowNull: false })
-  postId: string;
+  seriesId: string;
 
-  @BelongsTo(() => Post, { foreignKey: 'postId', onDelete: 'CASCADE' })
-  post: Post;
+  @BelongsTo(() => Series, { foreignKey: 'seriesId', onDelete: 'CASCADE' })
+  series: Series;
 
   @ForeignKey(() => Tag)
   @Column({ type: DataType.UUID, allowNull: false })

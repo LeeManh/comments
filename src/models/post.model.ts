@@ -9,7 +9,6 @@ import {
 } from 'sequelize-typescript';
 import { AbstractModel } from './abstract.model';
 import { User } from './user.model';
-// import { Comment } from './comments.model';
 import { PostTag } from './post-tags.model';
 import { Tag } from './tag.model';
 import { Series } from './series.model';
@@ -42,9 +41,6 @@ export class Post extends AbstractModel {
 
   @BelongsTo(() => User, { foreignKey: 'authorId', onDelete: 'CASCADE' })
   author: User;
-
-  // @HasMany(() => Comment, { foreignKey: 'postId' })
-  // comments: Comment[];
 
   @BelongsToMany(() => Tag, () => PostTag, 'postId', 'tagId')
   tags: Tag[];

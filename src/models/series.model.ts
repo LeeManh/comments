@@ -1,5 +1,6 @@
 import {
   BelongsTo,
+  BelongsToMany,
   Column,
   DataType,
   ForeignKey,
@@ -11,7 +12,8 @@ import { User } from './user.model';
 import { Post } from './post.model';
 import { BookmarkTargetType } from 'src/commons/constants/bookmark.constant';
 import { Bookmark } from './bookmark.model';
-// import { Comment } from './comments.model';
+import { Tag } from './tag.model';
+import { SeriesTags } from './series-tags.model';
 
 @Table({ tableName: 'series', timestamps: true })
 export class Series extends AbstractModel {
@@ -40,13 +42,13 @@ export class Series extends AbstractModel {
   @HasMany(() => Post, { foreignKey: 'seriesId' })
   posts: Post[];
 
-  // @HasMany(() => Comment, { foreignKey: 'seriesId' })
-  // comments: Comment[];
-
   @HasMany(() => Bookmark, {
     foreignKey: 'targetId',
     constraints: false,
     scope: { targetType: BookmarkTargetType.SERIES },
   })
   bookmarks: Bookmark[];
+
+  @BelongsToMany(() => Tag, () => SeriesTags, 'seriesId', 'tagId')
+  tags: Tag[];
 }

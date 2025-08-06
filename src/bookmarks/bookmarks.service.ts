@@ -14,7 +14,6 @@ import { Series } from 'src/models/series.model';
 import { User } from 'src/models/user.model';
 import { Tag } from 'src/models/tag.model';
 import { WhereOptions } from 'sequelize';
-import { Op } from 'sequelize';
 
 @Injectable()
 export class BookmarksService {
@@ -53,7 +52,7 @@ export class BookmarksService {
     userId: string,
     getMyBookmarksParams: GetMyBookmarksParams,
   ) {
-    const { targetType, page, limit, search } = getMyBookmarksParams;
+    const { targetType, page, limit } = getMyBookmarksParams;
 
     const where: WhereOptions = {
       userId,
@@ -67,13 +66,6 @@ export class BookmarksService {
     const postInclude = {
       model: Post,
       required: false,
-      where: search
-        ? {
-            title: {
-              [Op.iLike]: `%${search}%`,
-            },
-          }
-        : undefined,
       include: [
         {
           model: User,
@@ -89,13 +81,6 @@ export class BookmarksService {
     const seriesInclude = {
       model: Series,
       required: false,
-      where: search
-        ? {
-            title: {
-              [Op.iLike]: `%${search}%`,
-            },
-          }
-        : undefined,
       include: [
         {
           model: Post,
@@ -113,6 +98,10 @@ export class BookmarksService {
         {
           model: User,
           attributes: ['id', 'username', 'avatar', 'displayName'],
+        },
+        {
+          model: Tag,
+          through: { attributes: [] },
         },
       ],
     };

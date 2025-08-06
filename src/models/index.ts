@@ -8,6 +8,7 @@ import { Bookmark } from './bookmark.model';
 import { Activity } from './activity.model';
 import { Tag } from './tag.model';
 import { PostTag } from './post-tags.model';
+import { SeriesTags } from './series-tags.model';
 
 export const models = [
   User,
@@ -20,4 +21,5 @@ export const models = [
   Activity,
   Tag,
   PostTag,
+  SeriesTags,
 ];

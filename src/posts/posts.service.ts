@@ -27,7 +27,7 @@ export class PostsService {
   constructor(
     @InjectModel(Post)
     private readonly postsRepository: typeof Post,
-    private readonly tagService: TagsService,
+    private readonly tagsService: TagsService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
@@ -175,9 +175,9 @@ export class PostsService {
     for (const tagData of tags) {
       let tag: Tag;
       if (tagData.id) {
-        tag = await this.tagService.fineOne(tagData.id);
+        tag = await this.tagsService.fineOne(tagData.id);
       } else {
-        [tag] = await this.tagService.findOneOrCreateByName(tagData.name);
+        [tag] = await this.tagsService.findOneOrCreateByName(tagData.name);
       }
 
       tagInstances.push(tag);

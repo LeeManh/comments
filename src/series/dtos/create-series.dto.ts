@@ -1,4 +1,22 @@
-import { IsArray, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+  IsArray,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUUID,
+  ValidateNested,
+} from 'class-validator';
+
+export class TagDto {
+  @IsOptional()
+  @IsUUID()
+  id?: string;
+
+  @IsNotEmpty()
+  @IsString()
+  name: string;
+}
 
 export class CreateSeriesDto {
   @IsString()
@@ -21,4 +39,9 @@ export class CreateSeriesDto {
   @IsArray()
   @IsString({ each: true })
   postIds: string[];
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => TagDto)
+  tags: TagDto[];
 }

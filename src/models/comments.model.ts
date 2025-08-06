@@ -8,7 +8,6 @@ import {
 } from 'sequelize-typescript';
 import { AbstractModel } from './abstract.model';
 import { User } from './user.model';
-// import { Post } from './post.model';
 import { CommentTargetType } from 'src/commons/constants/comment.constant';
 
 @Table({ tableName: 'comments', timestamps: true })
@@ -22,13 +21,6 @@ export class Comment extends AbstractModel {
 
   @BelongsTo(() => User, { foreignKey: 'userId', onDelete: 'CASCADE' })
   user: User;
-
-  // @ForeignKey(() => Post)
-  // @Column({ type: DataType.UUID, allowNull: false })
-  // postId: string;
-
-  // @BelongsTo(() => Post, { foreignKey: 'postId', onDelete: 'CASCADE' })
-  // post: Post;
 
   @Column({ type: DataType.UUID, allowNull: false })
   targetId: string;
