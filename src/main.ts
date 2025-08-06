@@ -2,12 +2,20 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import {
   HttpStatus,
+  Logger,
   UnprocessableEntityException,
   ValidationPipe,
 } from '@nestjs/common';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  // Tạo logger instance
+  const logger = new Logger('Bootstrap');
+
+  const app = await NestFactory.create(AppModule, {
+    // Cấu hình logger
+    logger: ['error', 'warn', 'log', 'debug', 'verbose'],
+  });
+
   app.setGlobalPrefix('api');
   app.enableCors({
     origin: '*',
@@ -34,6 +42,10 @@ async function bootstrap() {
       },
     }),
   );
-  await app.listen(process.env.PORT ?? 3000);
+  const port = process.env.PORT ?? 3000;
+  await app.listen(port);
+
+  logger.log(`🚀 Application is running on: http://localhost:${port}`);
+  logger.log(`Posts Scheduler is active - checking every minute`);
 }
 bootstrap();

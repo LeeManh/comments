@@ -15,11 +15,13 @@ import { SeriesModule } from './series/series.module';
 import { LikesModule } from './likes/likes.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { BookmarksModule } from './bookmarks/bookmarks.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     EventEmitterModule.forRoot({ global: true }),
+    ScheduleModule.forRoot(),
     DatabaseModule,
     UsersModule,
     AuthModule,

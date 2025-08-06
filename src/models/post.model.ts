@@ -14,6 +14,10 @@ import { Tag } from './tag.model';
 import { Series } from './series.model';
 import { Bookmark } from './bookmark.model';
 import { BookmarkTargetType } from 'src/commons/constants/bookmark.constant';
+import {
+  PostStatus,
+  PostVisibility,
+} from 'src/commons/constants/post.constant';
 
 @Table({
   tableName: 'posts',
@@ -58,4 +62,24 @@ export class Post extends AbstractModel {
     scope: { targetType: BookmarkTargetType.POST },
   })
   bookmarks: Bookmark[];
+
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    defaultValue: PostStatus.DRAFT,
+  })
+  status: PostStatus;
+
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    defaultValue: PostVisibility.PRIVATE,
+  })
+  visibility: PostVisibility;
+
+  @Column({ type: DataType.DATE, allowNull: true })
+  publishedAt: Date;
+
+  @Column({ type: DataType.DATE, allowNull: true })
+  scheduledAt: Date;
 }

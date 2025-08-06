@@ -21,6 +21,10 @@ import { LikeTargetType } from 'src/commons/constants/like.constant';
 import { Literal } from 'sequelize/types/utils';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { EVENT_NAME } from 'src/commons/constants/event.constant';
+import {
+  PostStatus,
+  PostVisibility,
+} from 'src/commons/constants/post.constant';
 
 @Injectable()
 export class PostsService {
@@ -45,6 +49,8 @@ export class PostsService {
   async create(user: User, createPostDto: CreatePostDto) {
     try {
       const { tags, ...postData } = createPostDto;
+
+      this.setPublishedAtByStatus(postData);
 
       const post = await this.postsRepository.create({
         ...postData,
@@ -75,6 +81,9 @@ export class PostsService {
       };
     }
 
+    // Lọc theo quyền đọc
+    this.applyPostVisibilityFilter(where, userId);
+
     const { count, rows: data } = await this.postsRepository.findAndCountAll({
       where,
       include: this.POST_INCLUDE,
@@ -90,7 +99,13 @@ export class PostsService {
   }
 
   async findOne(id: string, userId?: string) {
-    const post = await this.postsRepository.findByPk(id, {
+    const where: WhereOptions = { id };
+
+    // Lọc theo quyền đọc
+    this.applyPostVisibilityFilter(where, userId);
+
+    const post = await this.postsRepository.findOne({
+      where,
       include: this.POST_INCLUDE,
       attributes: this.getPostAttributes(userId),
     });
@@ -111,6 +126,9 @@ export class PostsService {
       if (post.authorId !== user.id) throw new ForbiddenException('Forbidden');
 
       const { tags, ...postData } = updatePostDto;
+
+      // Xử lý logic status và publishedAt
+      this.setPublishedAtByStatus(postData);
 
       await post.update(postData);
 
@@ -239,5 +257,52 @@ export class PostsService {
     }
 
     return attributes;
+  }
+
+  private setPublishedAtByStatus(postData: any) {
+    const now = new Date();
+
+    if (postData.status === PostStatus.SCHEDULED) {
+      if (!postData.scheduledAt) {
+        throw new BadRequestException(
+          'scheduledAt is required for scheduled posts',
+        );
+      }
+
+      const scheduled = new Date(postData.scheduledAt);
+      if (scheduled <= now) {
+        throw new BadRequestException('scheduledAt must be in the future');
+      }
+
+      postData.publishedAt = scheduled;
+    } else if (postData.status === PostStatus.PUBLISHED) {
+      postData.publishedAt = now;
+    } else {
+      // DRAFT hoặc các status khác
+      postData.publishedAt = null;
+    }
+  }
+
+  private applyPostVisibilityFilter(where: WhereOptions, userId?: string) {
+    if (!userId) {
+      // Người dùng chưa đăng nhập chỉ xem được bài viết PUBLIC và PUBLISHED
+      where[Op.and] = [
+        { status: PostStatus.PUBLISHED },
+        { visibility: PostVisibility.PUBLIC },
+      ];
+    } else {
+      // Người dùng đã đăng nhập có thể xem:
+      // 1. Bài viết PUBLIC và PUBLISHED
+      // 2. Bài viết của chính họ (kể cả DRAFT, PRIVATE, SCHEDULED)
+      where[Op.or] = [
+        {
+          status: PostStatus.PUBLISHED,
+          visibility: PostVisibility.PUBLIC,
+        },
+        {
+          authorId: userId,
+        },
+      ];
+    }
   }
 }
