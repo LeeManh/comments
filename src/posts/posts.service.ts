@@ -11,7 +11,7 @@ import { UpdatePostDto } from './dtos/update-post.dto';
 import { handleError } from 'src/commons/utils/error.util';
 import { QueryParamsDto } from 'src/commons/dtos/query-params.dto';
 import { MetaData } from 'src/commons/types/common.type';
-import { FindAttributeOptions, Op, where, WhereOptions } from 'sequelize';
+import { FindAttributeOptions, Op, WhereOptions } from 'sequelize';
 import { QueryUtil } from 'src/commons/utils/query.util';
 import { InjectModel } from '@nestjs/sequelize';
 import { generateSlug } from 'src/commons/utils/format.util';

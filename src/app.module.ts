@@ -14,6 +14,7 @@ import { TagsModule } from './tags/tags.module';
 import { SeriesModule } from './series/series.module';
 import { LikesModule } from './likes/likes.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { BookmarksModule } from './bookmarks/bookmarks.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     TagsModule,
     SeriesModule,
     LikesModule,
+    BookmarksModule,
   ],
   controllers: [],
   providers: [

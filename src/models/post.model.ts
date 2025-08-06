@@ -13,6 +13,8 @@ import { User } from './user.model';
 import { PostTag } from './post-tags.model';
 import { Tag } from './tag.model';
 import { Series } from './series.model';
+import { Bookmark } from './bookmark.model';
+import { BookmarkTargetType } from 'src/commons/constants/bookmark.constant';
 
 @Table({
   tableName: 'posts',
@@ -53,4 +55,11 @@ export class Post extends AbstractModel {
 
   @BelongsTo(() => Series, { foreignKey: 'seriesId', onDelete: 'SET NULL' })
   series?: Series;
+
+  @HasMany(() => Bookmark, {
+    foreignKey: 'targetId',
+    constraints: false,
+    scope: { targetType: BookmarkTargetType.POST },
+  })
+  bookmarks: Bookmark[];
 }
