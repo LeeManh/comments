@@ -9,7 +9,6 @@ import { User } from 'src/models/user.model';
 import { CreatePostDto, TagDto } from './dtos/create-post.dto';
 import { UpdatePostDto } from './dtos/update-post.dto';
 import { handleError } from 'src/commons/utils/error.util';
-import { QueryParamsDto } from 'src/commons/dtos/query-params.dto';
 import { MetaData } from 'src/commons/types/common.type';
 import { FindAttributeOptions, Op, WhereOptions } from 'sequelize';
 import { QueryUtil } from 'src/commons/utils/query.util';
@@ -25,6 +24,7 @@ import {
   PostStatus,
   PostVisibility,
 } from 'src/commons/constants/post.constant';
+import { PostQueryParamsDto } from './dtos/post-query-params.dto';
 
 @Injectable()
 export class PostsService {
@@ -72,21 +72,16 @@ export class PostsService {
   }
 
   async findAll(
-    queryParamsDto: QueryParamsDto,
+    queryParamsDto: PostQueryParamsDto,
     user?: User,
     isAdminApi = false,
   ) {
-    const { page, limit, search } = queryParamsDto;
+    const { page, limit } = queryParamsDto;
 
-    const where: WhereOptions = {};
-    if (search) {
-      where.title = {
-        [Op.iLike]: `%${search}%`,
-      };
-    }
-
-    // Lọc theo quyền đọc
-    this.applyPostVisibilityFilter(where, isAdminApi);
+    const where: WhereOptions = this.buildWhereClause(
+      queryParamsDto,
+      isAdminApi,
+    );
 
     const { count, rows: data } = await this.postsRepository.findAndCountAll({
       where,
@@ -296,5 +291,30 @@ export class PostsService {
       { status: PostStatus.PUBLISHED },
       { visibility: PostVisibility.PUBLIC },
     ];
+  }
+
+  private buildWhereClause(
+    query: PostQueryParamsDto,
+    isAdminApi: boolean,
+  ): WhereOptions {
+    const { search, status, visibility } = query;
+    const where: WhereOptions = {};
+
+    if (search) {
+      where.title = { [Op.iLike]: `%${search}%` };
+    }
+
+    if (isAdminApi) {
+      if (status !== undefined) {
+        where.status = status;
+      }
+      if (visibility !== undefined) {
+        where.visibility = visibility;
+      }
+    } else {
+      this.applyPostVisibilityFilter(where);
+    }
+
+    return where;
   }
 }

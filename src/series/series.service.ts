@@ -14,7 +14,6 @@ import { User } from 'src/models/user.model';
 import { PostsService } from 'src/posts/posts.service';
 import { FindAttributeOptions, Includeable, WhereOptions } from 'sequelize';
 import { Tag } from 'src/models/tag.model';
-import { QueryParamsDto } from 'src/commons/dtos/query-params.dto';
 import { Op } from 'sequelize';
 import { QueryUtil } from 'src/commons/utils/query.util';
 import { MetaData } from 'src/commons/types/common.type';
@@ -28,11 +27,11 @@ import {
   SeriesStatus,
   SeriesVisibility,
 } from 'src/commons/constants/series.constant';
-import { UserRole } from 'src/commons/constants/user.constant';
 import {
   PostStatus,
   PostVisibility,
 } from 'src/commons/constants/post.constant';
+import { SeriesQueryParamsDto } from './dtos/series-query-params.dto';
 
 @Injectable()
 export class SeriesService {
@@ -44,19 +43,6 @@ export class SeriesService {
   ) {}
 
   private SERIES_INCLUDE: Includeable[] = [
-    // {
-    //   model: Post,
-    //   include: [
-    //     {
-    //       model: User,
-    //       attributes: ['id', 'username', 'avatar', 'displayName'],
-    //     },
-    //     {
-    //       model: Tag,
-    //       through: { attributes: [] },
-    //     },
-    //   ],
-    // },
     {
       model: User,
       attributes: ['id', 'username', 'avatar', 'displayName'],
@@ -118,28 +104,20 @@ export class SeriesService {
   }
 
   async findAll(
-    queryParamsDto: QueryParamsDto,
+    queryParamsDto: SeriesQueryParamsDto,
     user?: User,
     isAdminApi = false,
   ) {
-    const { page, limit, search } = queryParamsDto;
+    const { page, limit } = queryParamsDto;
 
-    const where: WhereOptions = {};
-    if (search) {
-      where.title = {
-        [Op.iLike]: `%${search}%`,
-      };
-    }
-
-    // Lọc theo quyền đọc
-    this.applySeriesVisibilityFilter(where, isAdminApi);
+    const where: WhereOptions = this.buildSeriesWhereClause(
+      queryParamsDto,
+      isAdminApi,
+    );
 
     const { count, rows: data } = await this.seriesRepository.findAndCountAll({
       where,
-      include: [
-        ...this.SERIES_INCLUDE,
-        this.getPostIncludeInSeries(isAdminApi),
-      ],
+      include: [...this.SERIES_INCLUDE],
       order: [['createdAt', 'DESC']],
       offset: QueryUtil.getOffset(page, limit),
       limit: limit,
@@ -346,5 +324,32 @@ export class SeriesService {
         },
       ],
     };
+  }
+
+  private buildSeriesWhereClause(
+    query: SeriesQueryParamsDto,
+    isAdminApi: boolean,
+  ): WhereOptions {
+    const { search, status, visibility } = query;
+    const where: WhereOptions = {};
+
+    if (search) {
+      where.title = { [Op.iLike]: `%${search}%` };
+    }
+
+    if (isAdminApi) {
+      // Admin có thể filter theo status và visibility
+      if (status !== undefined) {
+        where.status = status;
+      }
+      if (visibility !== undefined) {
+        where.visibility = visibility;
+      }
+    } else {
+      // Public API - lọc theo quyền đọc
+      this.applySeriesVisibilityFilter(where, isAdminApi);
+    }
+
+    return where;
   }
 }

@@ -19,6 +19,7 @@ import { QueryParamsDto } from 'src/commons/dtos/query-params.dto';
 import { Roles } from 'src/commons/decorators/roles.decorator';
 import { UserRole } from 'src/commons/constants/user.constant';
 import { OptionalAuthApi } from 'src/commons/decorators/optional-auth-api.decorator';
+import { PostQueryParamsDto } from './dtos/post-query-params.dto';
 
 @Controller('posts')
 export class PostsController {
@@ -48,7 +49,7 @@ export class PostsController {
   @ResponseMessage('Get posts success')
   @Get('admin/all')
   async findAllAdmin(
-    @Query() queryParamsDto: QueryParamsDto,
+    @Query() queryParamsDto: PostQueryParamsDto,
     @CurrentUser() user: User,
   ) {
     return await this.postsService.findAll(queryParamsDto, user, true);

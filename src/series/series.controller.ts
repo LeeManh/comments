@@ -16,9 +16,9 @@ import { CreateSeriesDto } from './dtos/create-series.dto';
 import { CurrentUser } from 'src/commons/decorators/current-user.decorator';
 import { User } from 'src/models/user.model';
 import { ResponseMessage } from 'src/commons/decorators/response-message.decorator';
-import { QueryParamsDto } from 'src/commons/dtos/query-params.dto';
 import { UpdateSeriesDto } from './dtos/update-series.dto';
 import { OptionalAuthApi } from 'src/commons/decorators/optional-auth-api.decorator';
+import { SeriesQueryParamsDto } from './dtos/series-query-params.dto';
 
 @Controller('series')
 export class SeriesController {
@@ -38,7 +38,7 @@ export class SeriesController {
   @ResponseMessage('Get list series success')
   @Get()
   async findAll(
-    @Query() queryParamsDto: QueryParamsDto,
+    @Query() queryParamsDto: SeriesQueryParamsDto,
     @CurrentUser() user?: User,
   ) {
     return this.seriesService.findAll(queryParamsDto, user);
@@ -48,7 +48,7 @@ export class SeriesController {
   @ResponseMessage('Get series success')
   @Get('admin/all')
   async findAllAdmin(
-    @Query() queryParamsDto: QueryParamsDto,
+    @Query() queryParamsDto: SeriesQueryParamsDto,
     @CurrentUser() user: User,
   ) {
     return this.seriesService.findAll(queryParamsDto, user, true);
