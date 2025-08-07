@@ -18,6 +18,8 @@ import {
   SeriesStatus,
   SeriesVisibility,
 } from 'src/commons/constants/series.constant';
+import { CommentTargetType } from 'src/commons/constants/comment.constant';
+import { Comment } from './comments.model';
 
 @Table({ tableName: 'series', timestamps: true })
 export class Series extends AbstractModel {
@@ -75,4 +77,12 @@ export class Series extends AbstractModel {
 
   @Column({ type: DataType.DATE, allowNull: true })
   scheduledAt: Date;
+
+  // Polymorphic Associations
+  @HasMany(() => Comment, {
+    foreignKey: 'targetId',
+    constraints: false,
+    scope: { targetType: CommentTargetType.SERIES },
+  })
+  comments: Comment[];
 }

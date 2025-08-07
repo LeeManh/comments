@@ -9,6 +9,8 @@ import {
 import { AbstractModel } from './abstract.model';
 import { User } from './user.model';
 import { CommentTargetType } from 'src/commons/constants/comment.constant';
+import { Post } from './post.model';
+import { Series } from './series.model';
 
 @Table({ tableName: 'comments', timestamps: true })
 export class Comment extends AbstractModel {
@@ -37,4 +39,17 @@ export class Comment extends AbstractModel {
 
   @HasMany(() => Comment, { foreignKey: 'parentId' })
   replies: Comment[];
+
+  // Polymorphic Associations
+  @BelongsTo(() => Post, {
+    foreignKey: 'targetId',
+    constraints: false,
+  })
+  post?: Post;
+
+  @BelongsTo(() => Series, {
+    foreignKey: 'targetId',
+    constraints: false,
+  })
+  series?: Series;
 }

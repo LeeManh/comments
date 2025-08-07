@@ -18,6 +18,8 @@ import {
   PostStatus,
   PostVisibility,
 } from 'src/commons/constants/post.constant';
+import { Comment } from './comments.model';
+import { CommentTargetType } from 'src/commons/constants/comment.constant';
 
 @Table({
   tableName: 'posts',
@@ -82,4 +84,11 @@ export class Post extends AbstractModel {
 
   @Column({ type: DataType.DATE, allowNull: true })
   scheduledAt: Date;
+
+  @HasMany(() => Comment, {
+    foreignKey: 'targetId',
+    constraints: false,
+    scope: { targetType: CommentTargetType.POST },
+  })
+  comments: Comment[];
 }

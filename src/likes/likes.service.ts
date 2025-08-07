@@ -28,8 +28,13 @@ export class LikesService {
       });
 
       if (existingLike) {
-        await existingLike.destroy();
-        return;
+        if (existingLike.isDislike === isDislike) {
+          await existingLike.destroy();
+          return null;
+        } else {
+          await existingLike.update({ isDislike });
+          return existingLike;
+        }
       }
 
       const like = await this.likeRepository.create({

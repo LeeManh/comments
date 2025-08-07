@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { UserRole } from 'src/commons/constants/user.constant';
 import { Roles } from 'src/commons/decorators/roles.decorator';
@@ -14,6 +15,7 @@ import { TagsService } from './tags.service';
 import { ResponseMessage } from 'src/commons/decorators/response-message.decorator';
 import { PublicApi } from 'src/commons/decorators/public-api.decorator';
 import { UpdateTagDto } from './dtos/update-tag.dto';
+import { QueryParamsDto } from 'src/commons/dtos/query-params.dto';
 
 @Controller('tags')
 export class TagsController {
@@ -29,8 +31,8 @@ export class TagsController {
   @Get()
   @PublicApi()
   @ResponseMessage('Get tags success')
-  findAll() {
-    return this.tagsService.findAll();
+  findAll(@Query() queryParamsDto: QueryParamsDto) {
+    return this.tagsService.findAll(queryParamsDto);
   }
 
   @Get(':id')

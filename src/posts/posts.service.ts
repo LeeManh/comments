@@ -25,6 +25,8 @@ import {
   PostVisibility,
 } from 'src/commons/constants/post.constant';
 import { PostQueryParamsDto } from './dtos/post-query-params.dto';
+import { CommentTargetType } from 'src/commons/constants/comment.constant';
+import { BookmarkTargetType } from 'src/commons/constants/bookmark.constant';
 
 @Injectable()
 export class PostsService {
@@ -214,7 +216,7 @@ export class PostsService {
           AND likes."targetType" = ${LikeTargetType.POST}
           AND likes."isDislike" = false
         )`),
-        'likes',
+        'likeCount',
       ],
       [
         this.postsRepository.sequelize.literal(`(
@@ -224,7 +226,7 @@ export class PostsService {
           AND likes."targetType" = ${LikeTargetType.POST}
           AND likes."isDislike" = true
         )`),
-        'dislikes',
+        'dislikeCount',
       ],
     ];
   }
@@ -247,13 +249,59 @@ export class PostsService {
     ];
   }
 
+  private getCommentCountAttribute(): [Literal, string] {
+    return [
+      this.postsRepository.sequelize.literal(`(
+        SELECT CAST(COUNT(*) AS INTEGER) 
+        FROM comments 
+        WHERE comments."targetId" = "Post".id 
+        AND comments."targetType" = ${CommentTargetType.POST}
+      )`),
+      'commentCount',
+    ];
+  }
+
+  private getBookmarkCountAttribute(): [Literal, string] {
+    return [
+      this.postsRepository.sequelize.literal(`(
+        SELECT CAST(COUNT(*) AS INTEGER) 
+        FROM bookmarks 
+        WHERE bookmarks."targetId" = "Post".id 
+        AND bookmarks."targetType" = ${BookmarkTargetType.POST}
+      )`),
+      'bookmarkCount',
+    ];
+  }
+
+  private getUserBookmarkStatusAttribute(userId: string): [Literal, string] {
+    return [
+      this.postsRepository.sequelize.literal(`(
+        SELECT CASE 
+          WHEN EXISTS (
+            SELECT 1 FROM bookmarks 
+            WHERE bookmarks."targetId" = "Post".id 
+            AND bookmarks."targetType" = ${BookmarkTargetType.POST}
+            AND bookmarks."userId" = '${userId}'
+          ) THEN 'bookmarked'
+          ELSE NULL
+        END
+      )`),
+      'bookmarkStatus',
+    ];
+  }
+
   private getPostAttributes(userId?: string): FindAttributeOptions {
     const attributes = {
-      include: this.getLikeCountAttributes(),
+      include: [
+        ...this.getLikeCountAttributes(),
+        this.getCommentCountAttribute(),
+        this.getBookmarkCountAttribute(),
+      ],
     };
 
     if (userId) {
       attributes.include.push(this.getUserLikeStatusAttribute(userId));
+      attributes.include.push(this.getUserBookmarkStatusAttribute(userId));
     }
 
     return attributes;

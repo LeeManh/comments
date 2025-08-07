@@ -81,7 +81,7 @@ export class CommentsService {
         ...comment.toJSON(),
         replies: [],
         user: commentData.user || comment.user,
-        commentsCount: Number(comment.getDataValue('commentsCount') || 0),
+        commentCount: Number(comment.getDataValue('commentCount') || 0),
       });
     });
 
@@ -116,7 +116,7 @@ export class CommentsService {
           AND likes."targetType" = ${LikeTargetType.COMMENT}
           AND likes."isDislike" = false
         )`),
-        'likes',
+        'likeCount',
       ],
       [
         this.commentsRepository.sequelize.literal(`(
@@ -126,7 +126,7 @@ export class CommentsService {
           AND likes."targetType" = ${LikeTargetType.COMMENT}
           AND likes."isDislike" = true
         )`),
-        'dislikes',
+        'dislikeCount',
       ],
     ];
   }
@@ -149,9 +149,23 @@ export class CommentsService {
     ];
   }
 
+  private getCommentCountAttribute(): [Literal, string] {
+    return [
+      this.commentsRepository.sequelize.literal(`(
+        SELECT CAST(COUNT(*) AS INTEGER) 
+        FROM comments AS replies
+        WHERE replies."parentId" = "Comment".id
+      )`),
+      'commentCount',
+    ];
+  }
+
   private getCommentAttributes(userId?: string): FindAttributeOptions {
     const attributes = {
-      include: this.getLikeCountAttributes(),
+      include: [
+        ...this.getLikeCountAttributes(),
+        this.getCommentCountAttribute(),
+      ],
     };
 
     if (userId) {

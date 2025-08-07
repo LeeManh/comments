@@ -1,3 +1,4 @@
+import { QueryParamsDto } from 'src/commons/dtos/query-params.dto';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Tag } from 'src/models/tag.model';
@@ -5,6 +6,8 @@ import { CreateTagDto } from './dtos/create-tag.dto';
 import { UpdateTagDto } from './dtos/update-tag.dto';
 import { handleError } from 'src/commons/utils/error.util';
 import { generateSlug } from 'src/commons/utils/format.util';
+import { QueryUtil } from 'src/commons/utils/query.util';
+import { MetaData } from 'src/commons/types/common.type';
 
 @Injectable()
 export class TagsService {
@@ -38,8 +41,18 @@ export class TagsService {
     });
   }
 
-  async findAll() {
-    return this.tagRepository.findAll();
+  async findAll(queryParamsDto: QueryParamsDto) {
+    const { page, limit } = queryParamsDto;
+
+    const { count, rows: data } = await this.tagRepository.findAndCountAll({
+      order: [['name', 'ASC']],
+      offset: QueryUtil.getOffset(page, limit),
+      limit,
+    });
+
+    const meta: MetaData = QueryUtil.calculateMeta(page, limit, count);
+
+    return { meta, data };
   }
 
   async update(id: string, updateTagDto: UpdateTagDto) {
