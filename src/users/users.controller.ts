@@ -13,7 +13,9 @@ import { QueryParamsDto } from 'src/commons/dtos/query-params.dto';
 import { Roles } from 'src/commons/decorators/roles.decorator';
 import { UserRole } from 'src/commons/constants/user.constant';
 import { ResponseMessage } from 'src/commons/decorators/response-message.decorator';
-import { UpdateUserDto } from './dtos/update-user.dto';
+import { UpdateMeDto, UpdateUserDto } from './dtos/update-user.dto';
+import { CurrentUser } from 'src/commons/decorators/current-user.decorator';
+import { User } from 'src/models/user.model';
 
 @Controller('users')
 export class UsersController {
@@ -24,6 +26,18 @@ export class UsersController {
   @Get()
   async findAll(@Query() query: QueryParamsDto) {
     return this.usersService.findAll(query);
+  }
+
+  @ResponseMessage('Get profile success')
+  @Get('me')
+  async getMe(@CurrentUser() user: User) {
+    return await this.usersService.getMe(user.id);
+  }
+
+  @ResponseMessage('Update profile success')
+  @Patch('me')
+  async updateMe(@CurrentUser() user: User, @Body() updateMeDto: UpdateMeDto) {
+    return await this.usersService.updateMe(user.id, updateMeDto);
   }
 
   @Roles(UserRole.ADMIN)

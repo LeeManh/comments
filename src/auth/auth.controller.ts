@@ -50,10 +50,4 @@ export class AuthController {
       deviceInfo,
     );
   }
-
-  @ResponseMessage('Get me success')
-  @Get('me')
-  async getMe(@CurrentUser() user: User) {
-    return await this.authService.getMe(user);
-  }
 }

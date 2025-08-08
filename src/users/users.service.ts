@@ -6,7 +6,7 @@ import { hashPassword } from 'src/commons/utils/hash.util';
 import { handleError } from 'src/commons/utils/error.util';
 import { Op, WhereOptions } from 'sequelize';
 import { QueryUtil } from 'src/commons/utils/query.util';
-import { UpdateUserDto } from './dtos/update-user.dto';
+import { UpdateUserDto, UpdateMeDto } from './dtos/update-user.dto';
 import { InjectModel } from '@nestjs/sequelize';
 
 @Injectable()
@@ -65,6 +65,8 @@ export class UsersService {
       }
 
       await this.userRepository.update(updateUserDto, { where: { id } });
+
+      return this.getMe(id);
     } catch (error) {
       handleError(error, 'User');
     }
@@ -72,5 +74,17 @@ export class UsersService {
 
   async delete(id: string) {
     await this.userRepository.destroy({ where: { id } });
+  }
+
+  async getMe(id: string) {
+    const userData = await this.userRepository.findByPk(id, {
+      attributes: { exclude: ['password'] },
+    });
+    return userData;
+  }
+
+  async updateMe(id: string, updateMeDto: UpdateMeDto) {
+    await this.userRepository.update(updateMeDto, { where: { id } });
+    return this.getMe(id);
   }
 }

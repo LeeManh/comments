@@ -8,6 +8,7 @@ import { Like } from './like.model';
 import { Bookmark } from './bookmark.model';
 import { Activity } from './activity.model';
 import { Series } from './series.model';
+import { Exclude } from 'class-transformer';
 
 @Table({ tableName: 'users', timestamps: true })
 export class User extends AbstractModel {

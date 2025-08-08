@@ -55,10 +55,6 @@ export class AuthService {
     await this.refreshTokenService.revoke(refreshToken, user.id);
   }
 
-  async getMe(user: User) {
-    return await this.usersService.findById(user.id);
-  }
-
   async refreshToken(oldRefreshToken: string, deviceInfo: string) {
     const token = await this.refreshTokenService.findByToken(oldRefreshToken);
     const user = await this.usersService.findById(token.userId);
