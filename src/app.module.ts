@@ -16,6 +16,7 @@ import { LikesModule } from './likes/likes.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { BookmarksModule } from './bookmarks/bookmarks.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { MediasModule } from './medias/medias.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     SeriesModule,
     LikesModule,
     BookmarksModule,
+    MediasModule,
   ],
   controllers: [],
   providers: [
