@@ -32,6 +32,8 @@ import {
   PostVisibility,
 } from 'src/commons/constants/post.constant';
 import { SeriesQueryParamsDto } from './dtos/series-query-params.dto';
+import { BookmarkTargetType } from 'src/commons/constants/bookmark.constant';
+import { CommentTargetType } from 'src/commons/constants/comment.constant';
 
 @Injectable()
 export class SeriesService {
@@ -204,7 +206,7 @@ export class SeriesService {
           AND likes."targetType" = ${LikeTargetType.SERIES}
           AND likes."isDislike" = false
         )`),
-        'likes',
+        'likeCount',
       ],
       [
         this.seriesRepository.sequelize.literal(`(
@@ -214,7 +216,7 @@ export class SeriesService {
           AND likes."targetType" = ${LikeTargetType.SERIES}
           AND likes."isDislike" = true
         )`),
-        'dislikes',
+        'dislikeCount',
       ],
     ];
   }
@@ -237,13 +239,30 @@ export class SeriesService {
     ];
   }
 
+  private getCommentCountAttribute(): [Literal, string] {
+    return [
+      this.seriesRepository.sequelize.literal(`(
+        SELECT CAST(COUNT(*) AS INTEGER) 
+        FROM comments 
+        WHERE comments."targetId" = "Series".id 
+        AND comments."targetType" = ${CommentTargetType.SERIES}
+      )`),
+      'commentCount',
+    ];
+  }
+
   private getSeriesAttributes(userId?: string): FindAttributeOptions {
     const attributes = {
-      include: this.getLikeCountAttributes(),
+      include: [
+        ...this.getLikeCountAttributes(),
+        this.getBookmarkCountAttribute(),
+        this.getCommentCountAttribute(),
+      ],
     };
 
     if (userId) {
       attributes.include.push(this.getUserLikeStatusAttribute(userId));
+      attributes.include.push(this.getUserBookmarkStatusAttribute(userId));
     }
 
     return attributes;
@@ -324,6 +343,35 @@ export class SeriesService {
         },
       ],
     };
+  }
+
+  private getBookmarkCountAttribute(): [Literal, string] {
+    return [
+      this.seriesRepository.sequelize.literal(`(
+        SELECT CAST(COUNT(*) AS INTEGER) 
+        FROM bookmarks 
+        WHERE bookmarks."targetId" = "Series".id 
+        AND bookmarks."targetType" = ${BookmarkTargetType.SERIES}
+      )`),
+      'bookmarkCount',
+    ];
+  }
+
+  private getUserBookmarkStatusAttribute(userId: string): [Literal, string] {
+    return [
+      this.seriesRepository.sequelize.literal(`(
+        SELECT CASE 
+          WHEN EXISTS (
+            SELECT 1 FROM bookmarks 
+            WHERE bookmarks."targetId" = "Series".id 
+            AND bookmarks."targetType" = ${BookmarkTargetType.SERIES}
+            AND bookmarks."userId" = '${userId}'
+          ) THEN 'bookmarked'
+          ELSE NULL
+        END
+      )`),
+      'bookmarkStatus',
+    ];
   }
 
   private buildSeriesWhereClause(
